@@ -190,7 +190,7 @@ class Manager {
       { data: alphanumericURL, mode: 'alphanumeric' }
     ];
     // const segments: any = `${this.mobileAppProtocol}${alphanumericURL}`;
-    const opts = {margin:0, scale: 1, type: 'image/png' };
+    const opts = {margin:0, scale: 1, type: 'image/png', errorCorrectionLevel: 'L' };
     const createQRFunc: ((text: QRCodeSegment[], options: object, cb: (err:Error,data:string)=>void) => void) = mode !== 'png'? createQRString : createQRDataURL;
     if (mode === 'text') {
       opts.type = 'utf8';
