@@ -1,6 +1,6 @@
 import { io, Socket } from "socket.io-client";
 import * as msgpack from 'notepack.io';
-import { BASE64 } from "@thi.ng/base-n";
+import customSocketIOParser from 'socket.io-msgpack-parser';
 
 import Manager from "./index.js";
 import { socketIOClientOptions } from "./constants.js";
@@ -21,8 +21,9 @@ class SocketIOClient {
     this.sockets = new Set<Socket>();
     const opts = {
       ...socketIOClientOptions,
+      parser: customSocketIOParser,
       auth: (cb: any) => cb({
-        token: this.authSelf
+        token: this.authSelf()
       })
     };
     this.addresses.forEach((addr) => {
@@ -109,19 +110,13 @@ class SocketIOClient {
 
   private authSelf = () => {
     const timestamp = Date.now();
-    const publicKey = this.manager.nkey.ed25519pub;
+    const publicKey = new Uint8Array(this.manager.nkey.ed25519pub);
     const [clientOrigin, clientName] = this.manager.getTitle();
-    const payload = { timestamp, publicKey, serverName: this.serverName, clientName, clientOrigin };
-    const payloadBufffer = msgpack.encode(payload);
-    const signature = this.manager.nkey.sign(payloadBufffer);
+    const payload = { timestamp, serverName: this.serverName, clientName, clientOrigin };
+    const payloadBufffer = new Uint8Array(msgpack.encode(payload));
+    const signature = new Uint8Array(this.manager.nkey.sign(payloadBufffer));
 
-    return `SDK ${
-      BASE64.encodeBytes(publicKey)
-    } ${
-      BASE64.encodeBytes(payloadBufffer)
-    } ${
-      BASE64.encodeBytes(signature)
-    }`;
+    return ['SDK', publicKey, payloadBufffer, signature];
   }
 }
 

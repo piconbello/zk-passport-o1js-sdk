@@ -1,6 +1,6 @@
 import type { ManagerOptions, SocketOptions } from "socket.io-client";
 
-export const BonjourType = 'zk-passport-o1js';
+export const BonjourType = 'zk-pass-o1js';
 
 export const socketIOClientOptions: Partial<ManagerOptions & SocketOptions> = {
   reconnection: true,

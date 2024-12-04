@@ -30,6 +30,12 @@ class NKey {
       this.x25519pub
     ), 'Invalid X25519 key pair');
   }
+  static verify(signature: Uint8Array, data: Uint8Array, publicKey: Uint8Array): boolean {
+    if (signature.length!== 64 || publicKey.length!== 32) {
+      throw new Error('Invalid signature/public key');
+    }
+    return ed25519.verify(signature, data, publicKey);
+  }
   public sign(data: Uint8Array): Uint8Array {
     return ed25519.sign(data, this.ed25519priv);
   }
@@ -178,10 +184,14 @@ class Manager {
   public async createQRCodeForIntent(intent: Intent, mode: 'svg'|'png'|'text'='png'): Promise<string> {
     const intentBuffer = intent.toCompactBuffer();
     const signature = this.nkey.sign(intentBuffer);
+    const intentSize = Math.ceil(
+      intentBuffer.length * Math.log(256) / Math.log(36)
+    );
+    // to decode obtain buffer size via Math.floor(str.length * Math.log(36) / Math.log(256))
     const alphanumericURL = `://I/${
       BASE36.encodeBytes(this.nkey.ed25519pub)
     }-${
-      BASE36.encodeBytes(intentBuffer)
+      BASE36.encodeBytes(intentBuffer, intentSize)
     }-${
       BASE36.encodeBytes(signature)
     }`;
