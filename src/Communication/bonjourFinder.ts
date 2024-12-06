@@ -25,6 +25,7 @@ class BonjourFinder {
   }
 
   private onUp = (service: Service) => {
+    console.log(JSON.stringify(service, null, 2) + '\n');
     const addresses = (service.addresses||[]).map((addr) => {
       if (/\:/g.test(addr) && !addr.startsWith('[')) {
         // is ipv6 address, we need to wrap it in square brackets

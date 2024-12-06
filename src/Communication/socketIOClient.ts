@@ -21,6 +21,8 @@ class SocketIOClient {
     this.sockets = new Set<Socket>();
     const opts = {
       ...socketIOClientOptions,
+      transports: ['websocket'],
+      withCredentials: true,
       parser: customSocketIOParser,
       auth: (cb: any) => cb({
         token: this.authSelf()

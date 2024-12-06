@@ -6,10 +6,10 @@ import { toDataURL as createQRDataURL, toString as createQRString, type QRCodeSe
 import { assert, defEnsure } from '@thi.ng/errors';
 
 import Intent from '../Intent/index.js';
-import ProofResponse from '../ProofResponse/index.js';
+import ProofResponse from '../ProofResponse/data.js';
 import SocketIOClient from './socketIOClient.js';
 import BonjourFinder from './bonjourFinder.js';
-import { decryptBuffer } from '../helpers/security.js';
+import { decryptBuffer } from '../helpers/encryption.js';
 import { AdvancedPromise, createAdvancedPromise } from '../helpers/createAdvancedPromise.js';
 
 const ensureEd25519priv = defEnsure((x: any) => x instanceof Uint8Array && x.length === 32, 'ed25519priv:Uint(32)');
@@ -99,6 +99,7 @@ class Manager {
   }
 
   private onServerLost = (serverName: string): void => {
+    console.log('lost server:', serverName);
     this.socketClients.get(serverName)?._destructor().catch((error) => {
       console.error(`Failed to destruct SocketIOClient for "${serverName}".`, error);
     })
