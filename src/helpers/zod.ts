@@ -30,3 +30,6 @@ export const isUint8ArrayOfLength = (length: number) => isUint8Array.refine(
 
 export const isUint8ArrayOfLength32 = isUint8ArrayOfLength(32);
 export const isUint8ArrayOfLength64 = isUint8ArrayOfLength(64);
+
+const MAX_6BYTE_UINT = 281474976710655;
+export const is6ByteUint = z.number().int().gte(0).lte(MAX_6BYTE_UINT);

@@ -1,19 +1,21 @@
 import { z } from "zod";
-import * as msgpack from 'notepack.io'
 import { bytesToHex, bytesToNumberBE, equalBytes, numberToBytesBE } from '@noble/curves/abstract/utils';
-import { isOfType, isUint8ArrayOfLength32, isUint8ArrayOfLength64 } from "../helpers/zod";
-import { ProofResponseData, ProofResponseDataOptionsSchema } from "./data";
-import { NKeyPrivate, NKeyPublic } from "../NKey";
-import { ProofRequest, ProofRequestOptionsSchema } from "../ProofRequest";
-import { decryptBuffer, encryptBuffer } from "../helpers/encryption";
-import { NKeyPrivateLookup } from "../NKey/lookup";
-import { ProofRequestLookup } from "../ProofRequest/lookup";
 
-export * from "./data";
+import { isOfType, isUint8ArrayOfLength32, is6ByteUint } from "../helpers/zod.js";
+import * as msgpack from '../helpers/msgpack.js';
+import { decryptBuffer, encryptBuffer } from "../helpers/encryption.js";
+import { NKeyPrivate, NKeyPublic, NKeyPrivateLookup } from "../NKey/index.js";
+import { ProofRequest, ProofRequestOptionsSchema, ProofRequestLookup } from "../ProofRequest/index.js";
+
+import { ProofResponseData, ProofResponseDataOptionsSchema } from "./data.js";
+import { ProofResponseLookup } from "./lookup.js";
+
+export * from "./data.js";
+export * from "./lookup.js"
 
 export const ProofResponseOptionsSchema = z.object({
   ed25519pub: isUint8ArrayOfLength32.optional(), // omit for new proof responses.
-  timestamp: z.number().int().gte(0).lt((1<<(8*6))).optional(), // 6byte (Date.now() as integer)
+  timestamp: is6ByteUint.optional(), // 6byte (Date.now() as integer)
   data: ProofResponseDataOptionsSchema,
   proofRequest: ProofRequestOptionsSchema,
 });
@@ -30,7 +32,15 @@ export class ProofResponse {
     return this._nkey.ed25519pub;
   }
 
-  constructor(options: ProofResponseOptions) {
+  public get uuid(): string {
+    return this.proofRequest.uuid;
+  }
+  public toJSON(): object {
+    // used for easier debugging :)
+    return { nkey: this._nkey, timestamp: this.timestamp, data: this.data, proofRequest: this.proofRequest };
+  }
+
+  public constructor(options: ProofResponseOptions) {
     options = ProofResponseOptionsSchema.parse(options);
     this.timestamp = options.timestamp?? Date.now();
     this.data = new ProofResponseData(options.data);
@@ -40,6 +50,7 @@ export class ProofResponse {
     } else {
       this._nkey = new NKeyPrivate();
     }
+    ProofResponseLookup.getInstance().register(this);
   }
 
   public toCompactBuffer(): Uint8Array {
@@ -58,7 +69,7 @@ export class ProofResponse {
     return new ProofResponse({
       ed25519pub: buffer.subarray(0, 32),
       timestamp: Number(bytesToNumberBE(buffer.subarray(32, 38))),
-      data: ProofResponseData.fromCompactBuffer(dataBuffer),
+      data: ProofResponseData.fromCompactBuffer(dataBuffer).options,
       proofRequest: ProofRequest.fromCompactBuffer(proofRequestBuffer),
     });
   }

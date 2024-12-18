@@ -28,6 +28,11 @@ npm run coverage
 
 ## How to Use
 
+ok for now combined folder contains some examples. remove them and instead document the flow properly.
+
+
+
+
 If not initialized create a singleton Manager class instance. (use autoConnect true for socket connection)
 Create a new ProofRequest.
 Create a new Intent with the ProofRequest

@@ -1,7 +1,9 @@
 import { z } from 'zod';
 import { ed25519, x25519, edwardsToMontgomeryPub, edwardsToMontgomeryPriv } from '@noble/curves/ed25519';
 import { bytesToHex, equalBytes } from '@noble/curves/abstract/utils';
+
 import { isOfType, isUint8Array, isUint8ArrayOfLength32, isUint8ArrayOfLength64 } from '../helpers/zod.js';
+
 import { NKeyPrivateLookup } from './lookup.js';
 
 export * from './lookup.js';
@@ -9,7 +11,11 @@ export * from './lookup.js';
 export class NKeyPublic {
   public readonly ed25519pub: Uint8Array
   public readonly x25519pub: Uint8Array
-  constructor(keyData: NKeyPublic | Uint8Array) {
+  public toJSON(): object { 
+    // used for easier debugging :)
+    return { ed25519pub: this.ed25519pub.toString(), x25519pub: this.x25519pub.toString() };
+  }
+  public constructor(keyData: NKeyPublic | Uint8Array) {
     if (keyData instanceof NKeyPublic) {
       keyData = NKeyPublicSchema.parse(keyData).ed25519pub;
     }
@@ -35,7 +41,11 @@ export const NKeyPublicSchema = isOfType<NKeyPublic>(NKeyPublic);
 export class NKeyPrivate extends NKeyPublic {
   public readonly ed25519priv: Uint8Array
   public readonly x25519priv: Uint8Array
-  constructor(keyData?: NKeyPrivate | Uint8Array) {
+  public toJSON(): object { 
+    // used for easier debugging :)
+    return { ...super.toJSON(), ed25519priv: this.ed25519priv.toString(), x25519priv: this.x25519priv.toString() };
+  }
+  public constructor(keyData?: NKeyPrivate | Uint8Array) {
     if (!keyData) {
       keyData = ed25519.utils.randomPrivateKey();
     }

@@ -1,10 +1,13 @@
 import { z } from "zod";
 import { bytesToHex, bytesToNumberBE, numberToBytesBE } from '@noble/curves/abstract/utils';
 import { BASE36 } from '@thi.ng/base-n';
-import { toDataURL as createQRDataURL, toString as createQRString, type QRCodeSegment } from 'qrcode';
-import { isOfType, isUint8ArrayOfLength32, isUint8ArrayOfLength64 } from "../helpers/zod.js";
-import { ProofRequestQuery, ProofRequestQueryOptionsSchema } from "./query.js";
+import type { QRCodeSegment } from 'qrcode';
+import * as QRCode from 'qrcode';
+
+import { isOfType, isUint8ArrayOfLength32, isUint8ArrayOfLength64, is6ByteUint } from "../helpers/zod.js";
 import { NKeyPrivate, NKeyPrivateSchema, NKeyPublic } from "../NKey/index.js";
+
+import { ProofRequestQuery, ProofRequestQueryOptionsSchema, ProofRequestQuerySchema } from "./query.js";
 import { ProofRequestLookup } from "./lookup.js";
 
 export * from "./query.js";
@@ -12,8 +15,8 @@ export * from "./lookup.js"
 
 export const ProofRequestOptionsSchema = z.object({
   ed25519pub: isUint8ArrayOfLength32.optional(), // omit for new proof requests.
-  timestamp: z.number().int().gte(0).lt((1<<(8*6))).optional(), // 6byte (Date.now() as integer)
-  query: ProofRequestQueryOptionsSchema,
+  timestamp: is6ByteUint.optional(), // 6byte (Date.now() as integer)
+  query: z.union([ProofRequestQueryOptionsSchema, ProofRequestQuerySchema]),
 });
 
 export type ProofRequestOptions = z.infer<typeof ProofRequestOptionsSchema>;
@@ -28,11 +31,22 @@ export class ProofRequest {
   public get ed25519pub(): Uint8Array {
     return this._nkey.ed25519pub;
   }
+  public get nkeyUUID(): string {
+    return this._nkey.uuid;
+  }
+  public toJSON(): object {
+    // used for easier debugging :)
+    return { nkey: this._nkey, timestamp: this.timestamp, query: this.query, uuid: this.uuid };
+  }
   
-  constructor(options: ProofRequestOptions) {
+  public constructor(options: ProofRequestOptions) {
     options = ProofRequestOptionsSchema.parse(options);
     this.timestamp = options.timestamp ?? Date.now();
-    this.query = new ProofRequestQuery(options.query);
+    if (options.query instanceof ProofRequestQuery) {
+      this.query = options.query;
+    } else {
+      this.query = new ProofRequestQuery(options.query);
+    }
     if (options.ed25519pub) {
       this._nkey = new NKeyPublic(options.ed25519pub);
     } else {
@@ -58,10 +72,10 @@ export class ProofRequest {
     return new ProofRequest({
       ed25519pub: buffer.subarray(0, 32), 
       timestamp: Number(bytesToNumberBE(buffer.subarray(32, 38))),
-      query: ProofRequestQuery.fromCompactBuffer(buffer.subarray(38)),
+      query: ProofRequestQuery.fromCompactBuffer(buffer.subarray(38)).options,
     })
   }
-
+  
   public toSignedCompactBuffer(): Uint8Array {
     if (!(this._nkey instanceof NKeyPrivate)) throw new Error('Private key required for signing');
     const buffer = this.toCompactBuffer();
@@ -109,7 +123,7 @@ export class ProofRequest {
     ];
     // const segments: any = `${this.mobileAppProtocol}${alphanumericURL}`;
     const opts = {margin:0, scale: 1, type: 'image/png', errorCorrectionLevel: 'L' };
-    const createQRFunc: ((text: QRCodeSegment[], options: object, cb: (err:Error,data:string)=>void) => void) = mode !== 'png'? createQRString : createQRDataURL;
+    const createQRFunc: ((text: QRCodeSegment[], options: object, cb: (err:Error,data:string)=>void) => void) = mode !== 'png'? QRCode.toString : QRCode.toDataURL;
     if (mode === 'text') {
       opts.type = 'utf8';
     }

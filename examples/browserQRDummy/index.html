@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+  <!-- 
+    TODO we can make a better example with a service worker instead
+    That way, both the abudandance of socket.io errors can be hidden and it would eventually be needed for contract code.
+  -->
+  <head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browser QR Dummy</title>
+  </head>
+  <body>
+    <h1>Browser QR Dummy</h1>
+    <div id="proofRequest">
+      <pre></pre>
+    </div>
+    <div id="qrRegion" style="max-width: 300px;">
+      Initializing ...
+    </div>
+    <div id="proofResponse">
+      <pre>Waiting for response.</pre>
+    </div>
+    <input type="file" id="proofResponseFile">
+    <br />
+    <button type="button" id="clipboardImportButton">
+      Import proof response from clipboard
+    </button>
+    <br />
+    <button type="button" id="clipboardExportButton">
+      Copy dummy proof response to clipboard
+    </button>
+    <script src="/examples/browserQRDummy/script.cjs"></script>
+  </body>
+</html>
