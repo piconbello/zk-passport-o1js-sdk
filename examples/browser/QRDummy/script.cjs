@@ -13671,7 +13671,7 @@
     // title for the webpage (optional)
   }).required();
 
-  // examples/browserQRDummy/script.mjs
+  // examples/browser/QRDummy/script.mjs
   var query = new ProofRequestQuery({
     type: "dummy",
     dummy: Math.floor(Math.random() * 1e7).toString(16)

@@ -1,7 +1,7 @@
 // Use below command to compile
-// npx esbuild --bundle examples/browserQRDummy/script.mjs --outfile=examples/browserQRDummy/script.cjs
+// npx esbuild --bundle examples/browser/QRDummy/script.mjs --outfile=examples/browser/QRDummy/script.cjs
 
-import { ProofRequestQuery, ProofRequest, ProofResponse, ProofResponseData, SocketIOConnection, ProofResponseLookup } from '../../build/src/index.js';
+import { ProofRequestQuery, ProofRequest, ProofResponse, ProofResponseData, SocketIOConnection, ProofResponseLookup } from '../../../build/src/index.js';
 
 const query = new ProofRequestQuery({
   type: 'dummy',
