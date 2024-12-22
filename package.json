@@ -28,6 +28,7 @@
     "@babel/preset-typescript": "^7.16.0",
     "@jsenv/importmap-node-module": "^7.0.1",
     "@types/jest": "^29.5.12",
+    "@types/msgpack-lite": "^0.1.11",
     "@types/qrcode": "^1.5.5",
     "@typescript-eslint/eslint-plugin": "^5.5.0",
     "@typescript-eslint/parser": "^5.5.0",
@@ -50,10 +51,10 @@
     "@noble/curves": "^1.7.0",
     "@noble/hashes": "^1.6.1",
     "@thi.ng/base-n": "^2.7.25",
+    "msgpack-lite": "^0.1.26",
     "notepack.io": "^3.0.1",
     "qrcode": "^1.5.4",
     "socket.io-client": "^4.8.1",
-    "socket.io-msgpack-parser": "^3.0.2",
     "zod": "^3.23.8"
   }
 }

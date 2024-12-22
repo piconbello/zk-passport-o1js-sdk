@@ -87,6 +87,9 @@ export class ProofResponse {
   }
 
   public static fromEncryptedBuffer(buffer: Uint8Array): ProofResponse {
+    if (buffer instanceof ArrayBuffer) {
+      buffer = new Uint8Array(buffer);
+    }
     const responseEd25519pub = isUint8ArrayOfLength32.parse(buffer.subarray(0, 32));
     const requestNKeyPublic = new NKeyPublic(
       buffer.subarray(32, 64)

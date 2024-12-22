@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { bytesToHex, bytesToNumberBE, numberToBytesBE } from '@noble/curves/abstract/utils';
-import { BASE36 } from '@thi.ng/base-n';
+import { BASE36, BASE64 } from '@thi.ng/base-n';
 import type { QRCodeSegment } from 'qrcode';
 import * as QRCode from 'qrcode';
 
@@ -55,7 +55,11 @@ export class ProofRequest {
     this._uuidBuffer = new Uint8Array(38);
     this._uuidBuffer.set(this.ed25519pub, 0);
     this._uuidBuffer.set(numberToBytesBE(this.timestamp, 6), 32);
-    this.uuid = bytesToHex(this._uuidBuffer);
+    // this.uuid = bytesToHex(this._uuidBuffer);
+    const base36UUIDBufferSize = Math.ceil(
+      this._uuidBuffer.length * Math.log(256) / Math.log(36)
+    );
+    this.uuid = BASE36.encodeBytes(this._uuidBuffer, base36UUIDBufferSize).toLowerCase();
     if (this._nkey instanceof NKeyPrivate) { // NEW PROOF REQUEST ISSUED
       ProofRequestLookup.getInstance().register(this);
     }

@@ -866,7 +866,7 @@
         this.degree = degree;
         this.genPoly = Polynomial.generateECPolynomial(this.degree);
       };
-      ReedSolomonEncoder.prototype.encode = function encode5(data) {
+      ReedSolomonEncoder.prototype.encode = function encode4(data) {
         if (!this.genPoly) {
           throw new Error("Encoder not initialized");
         }
@@ -2108,1209 +2108,1916 @@
     }
   });
 
-  // node_modules/notepack.io/browser/encode.js
-  var require_encode = __commonJS({
-    "node_modules/notepack.io/browser/encode.js"(exports, module) {
-      "use strict";
-      var TIMESTAMP32_MAX_SEC = 4294967296 - 1;
-      var TIMESTAMP64_MAX_SEC = 17179869184 - 1;
-      function utf8Write(view, offset, str) {
-        var c = 0;
-        for (var i = 0, l = str.length; i < l; i++) {
-          c = str.charCodeAt(i);
-          if (c < 128) {
-            view.setUint8(offset++, c);
-          } else if (c < 2048) {
-            view.setUint8(offset++, 192 | c >> 6);
-            view.setUint8(offset++, 128 | c & 63);
-          } else if (c < 55296 || c >= 57344) {
-            view.setUint8(offset++, 224 | c >> 12);
-            view.setUint8(offset++, 128 | c >> 6 & 63);
-            view.setUint8(offset++, 128 | c & 63);
-          } else {
-            i++;
-            c = 65536 + ((c & 1023) << 10 | str.charCodeAt(i) & 1023);
-            view.setUint8(offset++, 240 | c >> 18);
-            view.setUint8(offset++, 128 | c >> 12 & 63);
-            view.setUint8(offset++, 128 | c >> 6 & 63);
-            view.setUint8(offset++, 128 | c & 63);
-          }
+  // node_modules/msgpack-lite/lib/buffer-global.js
+  var require_buffer_global = __commonJS({
+    "node_modules/msgpack-lite/lib/buffer-global.js"(exports, module) {
+      module.exports = c("undefined" !== typeof Buffer && Buffer) || c(exports.Buffer) || c("undefined" !== typeof window && window.Buffer) || exports.Buffer;
+      function c(B) {
+        return B && B.isBuffer && B;
+      }
+    }
+  });
+
+  // node_modules/isarray/index.js
+  var require_isarray = __commonJS({
+    "node_modules/isarray/index.js"(exports, module) {
+      var toString3 = {}.toString;
+      module.exports = Array.isArray || function(arr) {
+        return toString3.call(arr) == "[object Array]";
+      };
+    }
+  });
+
+  // node_modules/msgpack-lite/lib/bufferish-array.js
+  var require_bufferish_array = __commonJS({
+    "node_modules/msgpack-lite/lib/bufferish-array.js"(exports, module) {
+      var Bufferish = require_bufferish();
+      var exports = module.exports = alloc(0);
+      exports.alloc = alloc;
+      exports.concat = Bufferish.concat;
+      exports.from = from;
+      function alloc(size) {
+        return new Array(size);
+      }
+      function from(value2) {
+        if (!Bufferish.isBuffer(value2) && Bufferish.isView(value2)) {
+          value2 = Bufferish.Uint8Array.from(value2);
+        } else if (Bufferish.isArrayBuffer(value2)) {
+          value2 = new Uint8Array(value2);
+        } else if (typeof value2 === "string") {
+          return Bufferish.from.call(exports, value2);
+        } else if (typeof value2 === "number") {
+          throw new TypeError('"value" argument must not be a number');
+        }
+        return Array.prototype.slice.call(value2);
+      }
+    }
+  });
+
+  // node_modules/msgpack-lite/lib/bufferish-buffer.js
+  var require_bufferish_buffer = __commonJS({
+    "node_modules/msgpack-lite/lib/bufferish-buffer.js"(exports, module) {
+      var Bufferish = require_bufferish();
+      var Buffer2 = Bufferish.global;
+      var exports = module.exports = Bufferish.hasBuffer ? alloc(0) : [];
+      exports.alloc = Bufferish.hasBuffer && Buffer2.alloc || alloc;
+      exports.concat = Bufferish.concat;
+      exports.from = from;
+      function alloc(size) {
+        return new Buffer2(size);
+      }
+      function from(value2) {
+        if (!Bufferish.isBuffer(value2) && Bufferish.isView(value2)) {
+          value2 = Bufferish.Uint8Array.from(value2);
+        } else if (Bufferish.isArrayBuffer(value2)) {
+          value2 = new Uint8Array(value2);
+        } else if (typeof value2 === "string") {
+          return Bufferish.from.call(exports, value2);
+        } else if (typeof value2 === "number") {
+          throw new TypeError('"value" argument must not be a number');
+        }
+        if (Buffer2.from && Buffer2.from.length !== 1) {
+          return Buffer2.from(value2);
+        } else {
+          return new Buffer2(value2);
         }
       }
-      function utf8Length2(str) {
-        var c = 0, length = 0;
-        for (var i = 0, l = str.length; i < l; i++) {
-          c = str.charCodeAt(i);
-          if (c < 128) {
-            length += 1;
-          } else if (c < 2048) {
-            length += 2;
-          } else if (c < 55296 || c >= 57344) {
-            length += 3;
-          } else {
-            i++;
-            length += 4;
-          }
-        }
-        return length;
+    }
+  });
+
+  // node_modules/msgpack-lite/lib/bufferish-uint8array.js
+  var require_bufferish_uint8array = __commonJS({
+    "node_modules/msgpack-lite/lib/bufferish-uint8array.js"(exports, module) {
+      var Bufferish = require_bufferish();
+      var exports = module.exports = Bufferish.hasArrayBuffer ? alloc(0) : [];
+      exports.alloc = alloc;
+      exports.concat = Bufferish.concat;
+      exports.from = from;
+      function alloc(size) {
+        return new Uint8Array(size);
       }
-      function _encode(bytes, defers, value2) {
-        var type = typeof value2, i = 0, l = 0, hi = 0, lo = 0, length = 0, size = 0;
-        if (type === "string") {
-          length = utf8Length2(value2);
-          if (length < 32) {
-            bytes.push(length | 160);
-            size = 1;
-          } else if (length < 256) {
-            bytes.push(217, length);
-            size = 2;
-          } else if (length < 65536) {
-            bytes.push(218, length >> 8, length);
-            size = 3;
-          } else if (length < 4294967296) {
-            bytes.push(219, length >> 24, length >> 16, length >> 8, length);
-            size = 5;
-          } else {
-            throw new Error("String too long");
-          }
-          defers.push({ _str: value2, _length: length, _offset: bytes.length });
-          return size + length;
-        }
-        if (type === "number") {
-          if (Math.floor(value2) !== value2 || !isFinite(value2)) {
-            bytes.push(203);
-            defers.push({ _float: value2, _length: 8, _offset: bytes.length });
-            return 9;
-          }
-          if (value2 >= 0) {
-            if (value2 < 128) {
-              bytes.push(value2);
-              return 1;
-            }
-            if (value2 < 256) {
-              bytes.push(204, value2);
-              return 2;
-            }
-            if (value2 < 65536) {
-              bytes.push(205, value2 >> 8, value2);
-              return 3;
-            }
-            if (value2 < 4294967296) {
-              bytes.push(206, value2 >> 24, value2 >> 16, value2 >> 8, value2);
-              return 5;
-            }
-            hi = value2 / Math.pow(2, 32) >> 0;
-            lo = value2 >>> 0;
-            bytes.push(207, hi >> 24, hi >> 16, hi >> 8, hi, lo >> 24, lo >> 16, lo >> 8, lo);
-            return 9;
-          } else {
-            if (value2 >= -32) {
-              bytes.push(value2);
-              return 1;
-            }
-            if (value2 >= -128) {
-              bytes.push(208, value2);
-              return 2;
-            }
-            if (value2 >= -32768) {
-              bytes.push(209, value2 >> 8, value2);
-              return 3;
-            }
-            if (value2 >= -2147483648) {
-              bytes.push(210, value2 >> 24, value2 >> 16, value2 >> 8, value2);
-              return 5;
-            }
-            hi = Math.floor(value2 / Math.pow(2, 32));
-            lo = value2 >>> 0;
-            bytes.push(211, hi >> 24, hi >> 16, hi >> 8, hi, lo >> 24, lo >> 16, lo >> 8, lo);
-            return 9;
-          }
-        }
-        if (type === "object") {
-          if (value2 === null) {
-            bytes.push(192);
-            return 1;
-          }
-          if (Array.isArray(value2)) {
-            length = value2.length;
-            if (length < 16) {
-              bytes.push(length | 144);
-              size = 1;
-            } else if (length < 65536) {
-              bytes.push(220, length >> 8, length);
-              size = 3;
-            } else if (length < 4294967296) {
-              bytes.push(221, length >> 24, length >> 16, length >> 8, length);
-              size = 5;
+      function from(value2) {
+        if (Bufferish.isView(value2)) {
+          var byteOffset = value2.byteOffset;
+          var byteLength2 = value2.byteLength;
+          value2 = value2.buffer;
+          if (value2.byteLength !== byteLength2) {
+            if (value2.slice) {
+              value2 = value2.slice(byteOffset, byteOffset + byteLength2);
             } else {
-              throw new Error("Array too large");
-            }
-            for (i = 0; i < length; i++) {
-              size += _encode(bytes, defers, value2[i]);
-            }
-            return size;
-          }
-          if (value2 instanceof Date) {
-            var ms = value2.getTime();
-            var s = Math.floor(ms / 1e3);
-            var ns = (ms - s * 1e3) * 1e6;
-            if (s >= 0 && ns >= 0 && s <= TIMESTAMP64_MAX_SEC) {
-              if (ns === 0 && s <= TIMESTAMP32_MAX_SEC) {
-                bytes.push(214, 255, s >> 24, s >> 16, s >> 8, s);
-                return 6;
-              } else {
-                hi = s / 4294967296;
-                lo = s & 4294967295;
-                bytes.push(215, 255, ns >> 22, ns >> 14, ns >> 6, hi, lo >> 24, lo >> 16, lo >> 8, lo);
-                return 10;
+              value2 = new Uint8Array(value2);
+              if (value2.byteLength !== byteLength2) {
+                value2 = Array.prototype.slice.call(value2, byteOffset, byteOffset + byteLength2);
               }
-            } else {
-              hi = Math.floor(s / 4294967296);
-              lo = s >>> 0;
-              bytes.push(199, 12, 255, ns >> 24, ns >> 16, ns >> 8, ns, hi >> 24, hi >> 16, hi >> 8, hi, lo >> 24, lo >> 16, lo >> 8, lo);
-              return 15;
             }
           }
-          if (value2 instanceof ArrayBuffer) {
-            length = value2.byteLength;
-            if (length < 256) {
-              bytes.push(196, length);
-              size = 2;
-            } else if (length < 65536) {
-              bytes.push(197, length >> 8, length);
-              size = 3;
-            } else if (length < 4294967296) {
-              bytes.push(198, length >> 24, length >> 16, length >> 8, length);
-              size = 5;
-            } else {
-              throw new Error("Buffer too large");
-            }
-            defers.push({ _bin: value2, _length: length, _offset: bytes.length });
-            return size + length;
-          }
-          if (typeof value2.toJSON === "function") {
-            return _encode(bytes, defers, value2.toJSON());
-          }
-          var keys = [], key = "";
-          var allKeys = Object.keys(value2);
-          for (i = 0, l = allKeys.length; i < l; i++) {
-            key = allKeys[i];
-            if (value2[key] !== void 0 && typeof value2[key] !== "function") {
-              keys.push(key);
-            }
-          }
-          length = keys.length;
-          if (length < 16) {
-            bytes.push(length | 128);
-            size = 1;
-          } else if (length < 65536) {
-            bytes.push(222, length >> 8, length);
-            size = 3;
-          } else if (length < 4294967296) {
-            bytes.push(223, length >> 24, length >> 16, length >> 8, length);
-            size = 5;
-          } else {
-            throw new Error("Object too large");
-          }
-          for (i = 0; i < length; i++) {
-            key = keys[i];
-            size += _encode(bytes, defers, key);
-            size += _encode(bytes, defers, value2[key]);
-          }
-          return size;
+        } else if (typeof value2 === "string") {
+          return Bufferish.from.call(exports, value2);
+        } else if (typeof value2 === "number") {
+          throw new TypeError('"value" argument must not be a number');
         }
-        if (type === "boolean") {
-          bytes.push(value2 ? 195 : 194);
-          return 1;
-        }
-        if (type === "undefined") {
-          bytes.push(192);
-          return 1;
-        }
-        if (typeof value2.toJSON === "function") {
-          return _encode(bytes, defers, value2.toJSON());
-        }
-        throw new Error("Could not encode");
+        return new Uint8Array(value2);
       }
-      function encode5(value2) {
-        var bytes = [];
-        var defers = [];
-        var size = _encode(bytes, defers, value2);
-        var buf = new ArrayBuffer(size);
-        var view = new DataView(buf);
-        var deferIndex = 0;
-        var deferWritten = 0;
-        var nextOffset = -1;
-        if (defers.length > 0) {
-          nextOffset = defers[0]._offset;
-        }
-        var defer, deferLength = 0, offset = 0;
-        for (var i = 0, l = bytes.length; i < l; i++) {
-          view.setUint8(deferWritten + i, bytes[i]);
-          if (i + 1 !== nextOffset) {
-            continue;
-          }
-          defer = defers[deferIndex];
-          deferLength = defer._length;
-          offset = deferWritten + nextOffset;
-          if (defer._bin) {
-            var bin = new Uint8Array(defer._bin);
-            for (var j = 0; j < deferLength; j++) {
-              view.setUint8(offset + j, bin[j]);
-            }
-          } else if (defer._str) {
-            utf8Write(view, offset, defer._str);
-          } else if (defer._float !== void 0) {
-            view.setFloat64(offset, defer._float);
-          }
-          deferIndex++;
-          deferWritten += deferLength;
-          if (defers[deferIndex]) {
-            nextOffset = defers[deferIndex]._offset;
-          }
-        }
-        return buf;
-      }
-      module.exports = encode5;
     }
   });
 
-  // node_modules/notepack.io/browser/decode.js
+  // node_modules/msgpack-lite/lib/buffer-lite.js
+  var require_buffer_lite = __commonJS({
+    "node_modules/msgpack-lite/lib/buffer-lite.js"(exports) {
+      exports.copy = copy;
+      exports.toString = toString3;
+      exports.write = write;
+      function write(string, offset) {
+        var buffer2 = this;
+        var index = offset || (offset |= 0);
+        var length = string.length;
+        var chr = 0;
+        var i = 0;
+        while (i < length) {
+          chr = string.charCodeAt(i++);
+          if (chr < 128) {
+            buffer2[index++] = chr;
+          } else if (chr < 2048) {
+            buffer2[index++] = 192 | chr >>> 6;
+            buffer2[index++] = 128 | chr & 63;
+          } else if (chr < 55296 || chr > 57343) {
+            buffer2[index++] = 224 | chr >>> 12;
+            buffer2[index++] = 128 | chr >>> 6 & 63;
+            buffer2[index++] = 128 | chr & 63;
+          } else {
+            chr = (chr - 55296 << 10 | string.charCodeAt(i++) - 56320) + 65536;
+            buffer2[index++] = 240 | chr >>> 18;
+            buffer2[index++] = 128 | chr >>> 12 & 63;
+            buffer2[index++] = 128 | chr >>> 6 & 63;
+            buffer2[index++] = 128 | chr & 63;
+          }
+        }
+        return index - offset;
+      }
+      function toString3(encoding, start, end) {
+        var buffer2 = this;
+        var index = start | 0;
+        if (!end) end = buffer2.length;
+        var string = "";
+        var chr = 0;
+        while (index < end) {
+          chr = buffer2[index++];
+          if (chr < 128) {
+            string += String.fromCharCode(chr);
+            continue;
+          }
+          if ((chr & 224) === 192) {
+            chr = (chr & 31) << 6 | buffer2[index++] & 63;
+          } else if ((chr & 240) === 224) {
+            chr = (chr & 15) << 12 | (buffer2[index++] & 63) << 6 | buffer2[index++] & 63;
+          } else if ((chr & 248) === 240) {
+            chr = (chr & 7) << 18 | (buffer2[index++] & 63) << 12 | (buffer2[index++] & 63) << 6 | buffer2[index++] & 63;
+          }
+          if (chr >= 65536) {
+            chr -= 65536;
+            string += String.fromCharCode((chr >>> 10) + 55296, (chr & 1023) + 56320);
+          } else {
+            string += String.fromCharCode(chr);
+          }
+        }
+        return string;
+      }
+      function copy(target, targetStart, start, end) {
+        var i;
+        if (!start) start = 0;
+        if (!end && end !== 0) end = this.length;
+        if (!targetStart) targetStart = 0;
+        var len = end - start;
+        if (target === this && start < targetStart && targetStart < end) {
+          for (i = len - 1; i >= 0; i--) {
+            target[i + targetStart] = this[i + start];
+          }
+        } else {
+          for (i = 0; i < len; i++) {
+            target[i + targetStart] = this[i + start];
+          }
+        }
+        return len;
+      }
+    }
+  });
+
+  // node_modules/msgpack-lite/lib/bufferish-proto.js
+  var require_bufferish_proto = __commonJS({
+    "node_modules/msgpack-lite/lib/bufferish-proto.js"(exports) {
+      var BufferLite = require_buffer_lite();
+      exports.copy = copy;
+      exports.slice = slice;
+      exports.toString = toString3;
+      exports.write = gen("write");
+      var Bufferish = require_bufferish();
+      var Buffer2 = Bufferish.global;
+      var isBufferShim = Bufferish.hasBuffer && "TYPED_ARRAY_SUPPORT" in Buffer2;
+      var brokenTypedArray = isBufferShim && !Buffer2.TYPED_ARRAY_SUPPORT;
+      function copy(target, targetStart, start, end) {
+        var thisIsBuffer = Bufferish.isBuffer(this);
+        var targetIsBuffer = Bufferish.isBuffer(target);
+        if (thisIsBuffer && targetIsBuffer) {
+          return this.copy(target, targetStart, start, end);
+        } else if (!brokenTypedArray && !thisIsBuffer && !targetIsBuffer && Bufferish.isView(this) && Bufferish.isView(target)) {
+          var buffer2 = start || end != null ? slice.call(this, start, end) : this;
+          target.set(buffer2, targetStart);
+          return buffer2.length;
+        } else {
+          return BufferLite.copy.call(this, target, targetStart, start, end);
+        }
+      }
+      function slice(start, end) {
+        var f = this.slice || !brokenTypedArray && this.subarray;
+        if (f) return f.call(this, start, end);
+        var target = Bufferish.alloc.call(this, end - start);
+        copy.call(this, target, 0, start, end);
+        return target;
+      }
+      function toString3(encoding, start, end) {
+        var f = !isBufferShim && Bufferish.isBuffer(this) ? this.toString : BufferLite.toString;
+        return f.apply(this, arguments);
+      }
+      function gen(method) {
+        return wrap;
+        function wrap() {
+          var f = this[method] || BufferLite[method];
+          return f.apply(this, arguments);
+        }
+      }
+    }
+  });
+
+  // node_modules/msgpack-lite/lib/bufferish.js
+  var require_bufferish = __commonJS({
+    "node_modules/msgpack-lite/lib/bufferish.js"(exports) {
+      var Buffer2 = exports.global = require_buffer_global();
+      var hasBuffer = exports.hasBuffer = Buffer2 && !!Buffer2.isBuffer;
+      var hasArrayBuffer = exports.hasArrayBuffer = "undefined" !== typeof ArrayBuffer;
+      var isArray = exports.isArray = require_isarray();
+      exports.isArrayBuffer = hasArrayBuffer ? isArrayBuffer : _false;
+      var isBuffer = exports.isBuffer = hasBuffer ? Buffer2.isBuffer : _false;
+      var isView3 = exports.isView = hasArrayBuffer ? ArrayBuffer.isView || _is("ArrayBuffer", "buffer") : _false;
+      exports.alloc = alloc;
+      exports.concat = concat;
+      exports.from = from;
+      var BufferArray = exports.Array = require_bufferish_array();
+      var BufferBuffer = exports.Buffer = require_bufferish_buffer();
+      var BufferUint8Array = exports.Uint8Array = require_bufferish_uint8array();
+      var BufferProto = exports.prototype = require_bufferish_proto();
+      function from(value2) {
+        if (typeof value2 === "string") {
+          return fromString.call(this, value2);
+        } else {
+          return auto(this).from(value2);
+        }
+      }
+      function alloc(size) {
+        return auto(this).alloc(size);
+      }
+      function concat(list, length) {
+        if (!length) {
+          length = 0;
+          Array.prototype.forEach.call(list, dryrun);
+        }
+        var ref = this !== exports && this || list[0];
+        var result = alloc.call(ref, length);
+        var offset = 0;
+        Array.prototype.forEach.call(list, append);
+        return result;
+        function dryrun(buffer2) {
+          length += buffer2.length;
+        }
+        function append(buffer2) {
+          offset += BufferProto.copy.call(buffer2, result, offset);
+        }
+      }
+      var _isArrayBuffer = _is("ArrayBuffer");
+      function isArrayBuffer(value2) {
+        return value2 instanceof ArrayBuffer || _isArrayBuffer(value2);
+      }
+      function fromString(value2) {
+        var expected = value2.length * 3;
+        var that = alloc.call(this, expected);
+        var actual = BufferProto.write.call(that, value2);
+        if (expected !== actual) {
+          that = BufferProto.slice.call(that, 0, actual);
+        }
+        return that;
+      }
+      function auto(that) {
+        return isBuffer(that) ? BufferBuffer : isView3(that) ? BufferUint8Array : isArray(that) ? BufferArray : hasBuffer ? BufferBuffer : hasArrayBuffer ? BufferUint8Array : BufferArray;
+      }
+      function _false() {
+        return false;
+      }
+      function _is(name, key) {
+        name = "[object " + name + "]";
+        return function(value2) {
+          return value2 != null && {}.toString.call(key ? value2[key] : value2) === name;
+        };
+      }
+    }
+  });
+
+  // node_modules/msgpack-lite/lib/ext-buffer.js
+  var require_ext_buffer = __commonJS({
+    "node_modules/msgpack-lite/lib/ext-buffer.js"(exports) {
+      exports.ExtBuffer = ExtBuffer;
+      var Bufferish = require_bufferish();
+      function ExtBuffer(buffer2, type) {
+        if (!(this instanceof ExtBuffer)) return new ExtBuffer(buffer2, type);
+        this.buffer = Bufferish.from(buffer2);
+        this.type = type;
+      }
+    }
+  });
+
+  // node_modules/msgpack-lite/lib/ext-packer.js
+  var require_ext_packer = __commonJS({
+    "node_modules/msgpack-lite/lib/ext-packer.js"(exports) {
+      exports.setExtPackers = setExtPackers;
+      var Bufferish = require_bufferish();
+      var Buffer2 = Bufferish.global;
+      var packTypedArray = Bufferish.Uint8Array.from;
+      var _encode;
+      var ERROR_COLUMNS = { name: 1, message: 1, stack: 1, columnNumber: 1, fileName: 1, lineNumber: 1 };
+      function setExtPackers(codec) {
+        codec.addExtPacker(14, Error, [packError, encode4]);
+        codec.addExtPacker(1, EvalError, [packError, encode4]);
+        codec.addExtPacker(2, RangeError, [packError, encode4]);
+        codec.addExtPacker(3, ReferenceError, [packError, encode4]);
+        codec.addExtPacker(4, SyntaxError, [packError, encode4]);
+        codec.addExtPacker(5, TypeError, [packError, encode4]);
+        codec.addExtPacker(6, URIError, [packError, encode4]);
+        codec.addExtPacker(10, RegExp, [packRegExp, encode4]);
+        codec.addExtPacker(11, Boolean, [packValueOf, encode4]);
+        codec.addExtPacker(12, String, [packValueOf, encode4]);
+        codec.addExtPacker(13, Date, [Number, encode4]);
+        codec.addExtPacker(15, Number, [packValueOf, encode4]);
+        if ("undefined" !== typeof Uint8Array) {
+          codec.addExtPacker(17, Int8Array, packTypedArray);
+          codec.addExtPacker(18, Uint8Array, packTypedArray);
+          codec.addExtPacker(19, Int16Array, packTypedArray);
+          codec.addExtPacker(20, Uint16Array, packTypedArray);
+          codec.addExtPacker(21, Int32Array, packTypedArray);
+          codec.addExtPacker(22, Uint32Array, packTypedArray);
+          codec.addExtPacker(23, Float32Array, packTypedArray);
+          if ("undefined" !== typeof Float64Array) {
+            codec.addExtPacker(24, Float64Array, packTypedArray);
+          }
+          if ("undefined" !== typeof Uint8ClampedArray) {
+            codec.addExtPacker(25, Uint8ClampedArray, packTypedArray);
+          }
+          codec.addExtPacker(26, ArrayBuffer, packTypedArray);
+          codec.addExtPacker(29, DataView, packTypedArray);
+        }
+        if (Bufferish.hasBuffer) {
+          codec.addExtPacker(27, Buffer2, Bufferish.from);
+        }
+      }
+      function encode4(input) {
+        if (!_encode) _encode = require_encode().encode;
+        return _encode(input);
+      }
+      function packValueOf(value2) {
+        return value2.valueOf();
+      }
+      function packRegExp(value2) {
+        value2 = RegExp.prototype.toString.call(value2).split("/");
+        value2.shift();
+        var out = [value2.pop()];
+        out.unshift(value2.join("/"));
+        return out;
+      }
+      function packError(value2) {
+        var out = {};
+        for (var key in ERROR_COLUMNS) {
+          out[key] = value2[key];
+        }
+        return out;
+      }
+    }
+  });
+
+  // node_modules/int64-buffer/int64-buffer.js
+  var require_int64_buffer = __commonJS({
+    "node_modules/int64-buffer/int64-buffer.js"(exports) {
+      var Uint64BE;
+      var Int64BE;
+      var Uint64LE;
+      var Int64LE;
+      !function(exports2) {
+        var UNDEFINED = "undefined";
+        var BUFFER = UNDEFINED !== typeof Buffer && Buffer;
+        var UINT8ARRAY = UNDEFINED !== typeof Uint8Array && Uint8Array;
+        var ARRAYBUFFER = UNDEFINED !== typeof ArrayBuffer && ArrayBuffer;
+        var ZERO = [0, 0, 0, 0, 0, 0, 0, 0];
+        var isArray = Array.isArray || _isArray;
+        var BIT32 = 4294967296;
+        var BIT24 = 16777216;
+        var storage;
+        Uint64BE = factory("Uint64BE", true, true);
+        Int64BE = factory("Int64BE", true, false);
+        Uint64LE = factory("Uint64LE", false, true);
+        Int64LE = factory("Int64LE", false, false);
+        function factory(name, bigendian, unsigned) {
+          var posH = bigendian ? 0 : 4;
+          var posL = bigendian ? 4 : 0;
+          var pos0 = bigendian ? 0 : 3;
+          var pos1 = bigendian ? 1 : 2;
+          var pos2 = bigendian ? 2 : 1;
+          var pos3 = bigendian ? 3 : 0;
+          var fromPositive = bigendian ? fromPositiveBE : fromPositiveLE;
+          var fromNegative = bigendian ? fromNegativeBE : fromNegativeLE;
+          var proto = Int64.prototype;
+          var isName = "is" + name;
+          var _isInt64 = "_" + isName;
+          proto.buffer = void 0;
+          proto.offset = 0;
+          proto[_isInt64] = true;
+          proto.toNumber = toNumber;
+          proto.toString = toString3;
+          proto.toJSON = toNumber;
+          proto.toArray = toArray2;
+          if (BUFFER) proto.toBuffer = toBuffer;
+          if (UINT8ARRAY) proto.toArrayBuffer = toArrayBuffer;
+          Int64[isName] = isInt64;
+          exports2[name] = Int64;
+          return Int64;
+          function Int64(buffer2, offset, value2, raddix) {
+            if (!(this instanceof Int64)) return new Int64(buffer2, offset, value2, raddix);
+            return init(this, buffer2, offset, value2, raddix);
+          }
+          function isInt64(b) {
+            return !!(b && b[_isInt64]);
+          }
+          function init(that, buffer2, offset, value2, raddix) {
+            if (UINT8ARRAY && ARRAYBUFFER) {
+              if (buffer2 instanceof ARRAYBUFFER) buffer2 = new UINT8ARRAY(buffer2);
+              if (value2 instanceof ARRAYBUFFER) value2 = new UINT8ARRAY(value2);
+            }
+            if (!buffer2 && !offset && !value2 && !storage) {
+              that.buffer = newArray(ZERO, 0);
+              return;
+            }
+            if (!isValidBuffer(buffer2, offset)) {
+              var _storage = storage || Array;
+              raddix = offset;
+              value2 = buffer2;
+              offset = 0;
+              buffer2 = new _storage(8);
+            }
+            that.buffer = buffer2;
+            that.offset = offset |= 0;
+            if (UNDEFINED === typeof value2) return;
+            if ("string" === typeof value2) {
+              fromString(buffer2, offset, value2, raddix || 10);
+            } else if (isValidBuffer(value2, raddix)) {
+              fromArray(buffer2, offset, value2, raddix);
+            } else if ("number" === typeof raddix) {
+              writeInt32(buffer2, offset + posH, value2);
+              writeInt32(buffer2, offset + posL, raddix);
+            } else if (value2 > 0) {
+              fromPositive(buffer2, offset, value2);
+            } else if (value2 < 0) {
+              fromNegative(buffer2, offset, value2);
+            } else {
+              fromArray(buffer2, offset, ZERO, 0);
+            }
+          }
+          function fromString(buffer2, offset, str, raddix) {
+            var pos = 0;
+            var len = str.length;
+            var high = 0;
+            var low = 0;
+            if (str[0] === "-") pos++;
+            var sign = pos;
+            while (pos < len) {
+              var chr = parseInt(str[pos++], raddix);
+              if (!(chr >= 0)) break;
+              low = low * raddix + chr;
+              high = high * raddix + Math.floor(low / BIT32);
+              low %= BIT32;
+            }
+            if (sign) {
+              high = ~high;
+              if (low) {
+                low = BIT32 - low;
+              } else {
+                high++;
+              }
+            }
+            writeInt32(buffer2, offset + posH, high);
+            writeInt32(buffer2, offset + posL, low);
+          }
+          function toNumber() {
+            var buffer2 = this.buffer;
+            var offset = this.offset;
+            var high = readInt32(buffer2, offset + posH);
+            var low = readInt32(buffer2, offset + posL);
+            if (!unsigned) high |= 0;
+            return high ? high * BIT32 + low : low;
+          }
+          function toString3(radix) {
+            var buffer2 = this.buffer;
+            var offset = this.offset;
+            var high = readInt32(buffer2, offset + posH);
+            var low = readInt32(buffer2, offset + posL);
+            var str = "";
+            var sign = !unsigned && high & 2147483648;
+            if (sign) {
+              high = ~high;
+              low = BIT32 - low;
+            }
+            radix = radix || 10;
+            while (1) {
+              var mod2 = high % radix * BIT32 + low;
+              high = Math.floor(high / radix);
+              low = Math.floor(mod2 / radix);
+              str = (mod2 % radix).toString(radix) + str;
+              if (!high && !low) break;
+            }
+            if (sign) {
+              str = "-" + str;
+            }
+            return str;
+          }
+          function writeInt32(buffer2, offset, value2) {
+            buffer2[offset + pos3] = value2 & 255;
+            value2 = value2 >> 8;
+            buffer2[offset + pos2] = value2 & 255;
+            value2 = value2 >> 8;
+            buffer2[offset + pos1] = value2 & 255;
+            value2 = value2 >> 8;
+            buffer2[offset + pos0] = value2 & 255;
+          }
+          function readInt32(buffer2, offset) {
+            return buffer2[offset + pos0] * BIT24 + (buffer2[offset + pos1] << 16) + (buffer2[offset + pos2] << 8) + buffer2[offset + pos3];
+          }
+        }
+        function toArray2(raw) {
+          var buffer2 = this.buffer;
+          var offset = this.offset;
+          storage = null;
+          if (raw !== false && offset === 0 && buffer2.length === 8 && isArray(buffer2)) return buffer2;
+          return newArray(buffer2, offset);
+        }
+        function toBuffer(raw) {
+          var buffer2 = this.buffer;
+          var offset = this.offset;
+          storage = BUFFER;
+          if (raw !== false && offset === 0 && buffer2.length === 8 && Buffer.isBuffer(buffer2)) return buffer2;
+          var dest = new BUFFER(8);
+          fromArray(dest, 0, buffer2, offset);
+          return dest;
+        }
+        function toArrayBuffer(raw) {
+          var buffer2 = this.buffer;
+          var offset = this.offset;
+          var arrbuf = buffer2.buffer;
+          storage = UINT8ARRAY;
+          if (raw !== false && offset === 0 && arrbuf instanceof ARRAYBUFFER && arrbuf.byteLength === 8) return arrbuf;
+          var dest = new UINT8ARRAY(8);
+          fromArray(dest, 0, buffer2, offset);
+          return dest.buffer;
+        }
+        function isValidBuffer(buffer2, offset) {
+          var len = buffer2 && buffer2.length;
+          offset |= 0;
+          return len && offset + 8 <= len && "string" !== typeof buffer2[offset];
+        }
+        function fromArray(destbuf, destoff, srcbuf, srcoff) {
+          destoff |= 0;
+          srcoff |= 0;
+          for (var i = 0; i < 8; i++) {
+            destbuf[destoff++] = srcbuf[srcoff++] & 255;
+          }
+        }
+        function newArray(buffer2, offset) {
+          return Array.prototype.slice.call(buffer2, offset, offset + 8);
+        }
+        function fromPositiveBE(buffer2, offset, value2) {
+          var pos = offset + 8;
+          while (pos > offset) {
+            buffer2[--pos] = value2 & 255;
+            value2 /= 256;
+          }
+        }
+        function fromNegativeBE(buffer2, offset, value2) {
+          var pos = offset + 8;
+          value2++;
+          while (pos > offset) {
+            buffer2[--pos] = -value2 & 255 ^ 255;
+            value2 /= 256;
+          }
+        }
+        function fromPositiveLE(buffer2, offset, value2) {
+          var end = offset + 8;
+          while (offset < end) {
+            buffer2[offset++] = value2 & 255;
+            value2 /= 256;
+          }
+        }
+        function fromNegativeLE(buffer2, offset, value2) {
+          var end = offset + 8;
+          value2++;
+          while (offset < end) {
+            buffer2[offset++] = -value2 & 255 ^ 255;
+            value2 /= 256;
+          }
+        }
+        function _isArray(val) {
+          return !!val && "[object Array]" == Object.prototype.toString.call(val);
+        }
+      }(typeof exports === "object" && typeof exports.nodeName !== "string" ? exports : exports || {});
+    }
+  });
+
+  // node_modules/ieee754/index.js
+  var require_ieee754 = __commonJS({
+    "node_modules/ieee754/index.js"(exports) {
+      exports.read = function(buffer2, offset, isLE2, mLen, nBytes) {
+        var e, m;
+        var eLen = nBytes * 8 - mLen - 1;
+        var eMax = (1 << eLen) - 1;
+        var eBias = eMax >> 1;
+        var nBits = -7;
+        var i = isLE2 ? nBytes - 1 : 0;
+        var d = isLE2 ? -1 : 1;
+        var s = buffer2[offset + i];
+        i += d;
+        e = s & (1 << -nBits) - 1;
+        s >>= -nBits;
+        nBits += eLen;
+        for (; nBits > 0; e = e * 256 + buffer2[offset + i], i += d, nBits -= 8) {
+        }
+        m = e & (1 << -nBits) - 1;
+        e >>= -nBits;
+        nBits += mLen;
+        for (; nBits > 0; m = m * 256 + buffer2[offset + i], i += d, nBits -= 8) {
+        }
+        if (e === 0) {
+          e = 1 - eBias;
+        } else if (e === eMax) {
+          return m ? NaN : (s ? -1 : 1) * Infinity;
+        } else {
+          m = m + Math.pow(2, mLen);
+          e = e - eBias;
+        }
+        return (s ? -1 : 1) * m * Math.pow(2, e - mLen);
+      };
+      exports.write = function(buffer2, value2, offset, isLE2, mLen, nBytes) {
+        var e, m, c;
+        var eLen = nBytes * 8 - mLen - 1;
+        var eMax = (1 << eLen) - 1;
+        var eBias = eMax >> 1;
+        var rt = mLen === 23 ? Math.pow(2, -24) - Math.pow(2, -77) : 0;
+        var i = isLE2 ? 0 : nBytes - 1;
+        var d = isLE2 ? 1 : -1;
+        var s = value2 < 0 || value2 === 0 && 1 / value2 < 0 ? 1 : 0;
+        value2 = Math.abs(value2);
+        if (isNaN(value2) || value2 === Infinity) {
+          m = isNaN(value2) ? 1 : 0;
+          e = eMax;
+        } else {
+          e = Math.floor(Math.log(value2) / Math.LN2);
+          if (value2 * (c = Math.pow(2, -e)) < 1) {
+            e--;
+            c *= 2;
+          }
+          if (e + eBias >= 1) {
+            value2 += rt / c;
+          } else {
+            value2 += rt * Math.pow(2, 1 - eBias);
+          }
+          if (value2 * c >= 2) {
+            e++;
+            c /= 2;
+          }
+          if (e + eBias >= eMax) {
+            m = 0;
+            e = eMax;
+          } else if (e + eBias >= 1) {
+            m = (value2 * c - 1) * Math.pow(2, mLen);
+            e = e + eBias;
+          } else {
+            m = value2 * Math.pow(2, eBias - 1) * Math.pow(2, mLen);
+            e = 0;
+          }
+        }
+        for (; mLen >= 8; buffer2[offset + i] = m & 255, i += d, m /= 256, mLen -= 8) {
+        }
+        e = e << mLen | m;
+        eLen += mLen;
+        for (; eLen > 0; buffer2[offset + i] = e & 255, i += d, e /= 256, eLen -= 8) {
+        }
+        buffer2[offset + i - d] |= s * 128;
+      };
+    }
+  });
+
+  // node_modules/msgpack-lite/lib/write-uint8.js
+  var require_write_uint8 = __commonJS({
+    "node_modules/msgpack-lite/lib/write-uint8.js"(exports) {
+      var constant = exports.uint8 = new Array(256);
+      for (i = 0; i <= 255; i++) {
+        constant[i] = write0(i);
+      }
+      var i;
+      function write0(type) {
+        return function(encoder) {
+          var offset = encoder.reserve(1);
+          encoder.buffer[offset] = type;
+        };
+      }
+    }
+  });
+
+  // node_modules/msgpack-lite/lib/write-token.js
+  var require_write_token = __commonJS({
+    "node_modules/msgpack-lite/lib/write-token.js"(exports) {
+      var ieee754 = require_ieee754();
+      var Int64Buffer = require_int64_buffer();
+      var Uint64BE = Int64Buffer.Uint64BE;
+      var Int64BE = Int64Buffer.Int64BE;
+      var uint8 = require_write_uint8().uint8;
+      var Bufferish = require_bufferish();
+      var Buffer2 = Bufferish.global;
+      var IS_BUFFER_SHIM = Bufferish.hasBuffer && "TYPED_ARRAY_SUPPORT" in Buffer2;
+      var NO_TYPED_ARRAY = IS_BUFFER_SHIM && !Buffer2.TYPED_ARRAY_SUPPORT;
+      var Buffer_prototype = Bufferish.hasBuffer && Buffer2.prototype || {};
+      exports.getWriteToken = getWriteToken;
+      function getWriteToken(options) {
+        if (options && options.uint8array) {
+          return init_uint8array();
+        } else if (NO_TYPED_ARRAY || Bufferish.hasBuffer && options && options.safe) {
+          return init_safe();
+        } else {
+          return init_token();
+        }
+      }
+      function init_uint8array() {
+        var token = init_token();
+        token[202] = writeN(202, 4, writeFloatBE);
+        token[203] = writeN(203, 8, writeDoubleBE);
+        return token;
+      }
+      function init_token() {
+        var token = uint8.slice();
+        token[196] = write1(196);
+        token[197] = write2(197);
+        token[198] = write4(198);
+        token[199] = write1(199);
+        token[200] = write2(200);
+        token[201] = write4(201);
+        token[202] = writeN(202, 4, Buffer_prototype.writeFloatBE || writeFloatBE, true);
+        token[203] = writeN(203, 8, Buffer_prototype.writeDoubleBE || writeDoubleBE, true);
+        token[204] = write1(204);
+        token[205] = write2(205);
+        token[206] = write4(206);
+        token[207] = writeN(207, 8, writeUInt64BE);
+        token[208] = write1(208);
+        token[209] = write2(209);
+        token[210] = write4(210);
+        token[211] = writeN(211, 8, writeInt64BE);
+        token[217] = write1(217);
+        token[218] = write2(218);
+        token[219] = write4(219);
+        token[220] = write2(220);
+        token[221] = write4(221);
+        token[222] = write2(222);
+        token[223] = write4(223);
+        return token;
+      }
+      function init_safe() {
+        var token = uint8.slice();
+        token[196] = writeN(196, 1, Buffer2.prototype.writeUInt8);
+        token[197] = writeN(197, 2, Buffer2.prototype.writeUInt16BE);
+        token[198] = writeN(198, 4, Buffer2.prototype.writeUInt32BE);
+        token[199] = writeN(199, 1, Buffer2.prototype.writeUInt8);
+        token[200] = writeN(200, 2, Buffer2.prototype.writeUInt16BE);
+        token[201] = writeN(201, 4, Buffer2.prototype.writeUInt32BE);
+        token[202] = writeN(202, 4, Buffer2.prototype.writeFloatBE);
+        token[203] = writeN(203, 8, Buffer2.prototype.writeDoubleBE);
+        token[204] = writeN(204, 1, Buffer2.prototype.writeUInt8);
+        token[205] = writeN(205, 2, Buffer2.prototype.writeUInt16BE);
+        token[206] = writeN(206, 4, Buffer2.prototype.writeUInt32BE);
+        token[207] = writeN(207, 8, writeUInt64BE);
+        token[208] = writeN(208, 1, Buffer2.prototype.writeInt8);
+        token[209] = writeN(209, 2, Buffer2.prototype.writeInt16BE);
+        token[210] = writeN(210, 4, Buffer2.prototype.writeInt32BE);
+        token[211] = writeN(211, 8, writeInt64BE);
+        token[217] = writeN(217, 1, Buffer2.prototype.writeUInt8);
+        token[218] = writeN(218, 2, Buffer2.prototype.writeUInt16BE);
+        token[219] = writeN(219, 4, Buffer2.prototype.writeUInt32BE);
+        token[220] = writeN(220, 2, Buffer2.prototype.writeUInt16BE);
+        token[221] = writeN(221, 4, Buffer2.prototype.writeUInt32BE);
+        token[222] = writeN(222, 2, Buffer2.prototype.writeUInt16BE);
+        token[223] = writeN(223, 4, Buffer2.prototype.writeUInt32BE);
+        return token;
+      }
+      function write1(type) {
+        return function(encoder, value2) {
+          var offset = encoder.reserve(2);
+          var buffer2 = encoder.buffer;
+          buffer2[offset++] = type;
+          buffer2[offset] = value2;
+        };
+      }
+      function write2(type) {
+        return function(encoder, value2) {
+          var offset = encoder.reserve(3);
+          var buffer2 = encoder.buffer;
+          buffer2[offset++] = type;
+          buffer2[offset++] = value2 >>> 8;
+          buffer2[offset] = value2;
+        };
+      }
+      function write4(type) {
+        return function(encoder, value2) {
+          var offset = encoder.reserve(5);
+          var buffer2 = encoder.buffer;
+          buffer2[offset++] = type;
+          buffer2[offset++] = value2 >>> 24;
+          buffer2[offset++] = value2 >>> 16;
+          buffer2[offset++] = value2 >>> 8;
+          buffer2[offset] = value2;
+        };
+      }
+      function writeN(type, len, method, noAssert) {
+        return function(encoder, value2) {
+          var offset = encoder.reserve(len + 1);
+          encoder.buffer[offset++] = type;
+          method.call(encoder.buffer, value2, offset, noAssert);
+        };
+      }
+      function writeUInt64BE(value2, offset) {
+        new Uint64BE(this, offset, value2);
+      }
+      function writeInt64BE(value2, offset) {
+        new Int64BE(this, offset, value2);
+      }
+      function writeFloatBE(value2, offset) {
+        ieee754.write(this, value2, offset, false, 23, 4);
+      }
+      function writeDoubleBE(value2, offset) {
+        ieee754.write(this, value2, offset, false, 52, 8);
+      }
+    }
+  });
+
+  // node_modules/msgpack-lite/lib/write-type.js
+  var require_write_type = __commonJS({
+    "node_modules/msgpack-lite/lib/write-type.js"(exports) {
+      var IS_ARRAY = require_isarray();
+      var Int64Buffer = require_int64_buffer();
+      var Uint64BE = Int64Buffer.Uint64BE;
+      var Int64BE = Int64Buffer.Int64BE;
+      var Bufferish = require_bufferish();
+      var BufferProto = require_bufferish_proto();
+      var WriteToken = require_write_token();
+      var uint8 = require_write_uint8().uint8;
+      var ExtBuffer = require_ext_buffer().ExtBuffer;
+      var HAS_UINT8ARRAY = "undefined" !== typeof Uint8Array;
+      var HAS_MAP = "undefined" !== typeof Map;
+      var extmap = [];
+      extmap[1] = 212;
+      extmap[2] = 213;
+      extmap[4] = 214;
+      extmap[8] = 215;
+      extmap[16] = 216;
+      exports.getWriteType = getWriteType;
+      function getWriteType(options) {
+        var token = WriteToken.getWriteToken(options);
+        var useraw = options && options.useraw;
+        var binarraybuffer = HAS_UINT8ARRAY && options && options.binarraybuffer;
+        var isBuffer = binarraybuffer ? Bufferish.isArrayBuffer : Bufferish.isBuffer;
+        var bin = binarraybuffer ? bin_arraybuffer : bin_buffer;
+        var usemap = HAS_MAP && options && options.usemap;
+        var map = usemap ? map_to_map : obj_to_map;
+        var writeType = {
+          "boolean": bool,
+          "function": nil,
+          "number": number,
+          "object": useraw ? object_raw : object,
+          "string": _string(useraw ? raw_head_size : str_head_size),
+          "symbol": nil,
+          "undefined": nil
+        };
+        return writeType;
+        function bool(encoder, value2) {
+          var type = value2 ? 195 : 194;
+          token[type](encoder, value2);
+        }
+        function number(encoder, value2) {
+          var ivalue = value2 | 0;
+          var type;
+          if (value2 !== ivalue) {
+            type = 203;
+            token[type](encoder, value2);
+            return;
+          } else if (-32 <= ivalue && ivalue <= 127) {
+            type = ivalue & 255;
+          } else if (0 <= ivalue) {
+            type = ivalue <= 255 ? 204 : ivalue <= 65535 ? 205 : 206;
+          } else {
+            type = -128 <= ivalue ? 208 : -32768 <= ivalue ? 209 : 210;
+          }
+          token[type](encoder, ivalue);
+        }
+        function uint64(encoder, value2) {
+          var type = 207;
+          token[type](encoder, value2.toArray());
+        }
+        function int64(encoder, value2) {
+          var type = 211;
+          token[type](encoder, value2.toArray());
+        }
+        function str_head_size(length) {
+          return length < 32 ? 1 : length <= 255 ? 2 : length <= 65535 ? 3 : 5;
+        }
+        function raw_head_size(length) {
+          return length < 32 ? 1 : length <= 65535 ? 3 : 5;
+        }
+        function _string(head_size) {
+          return string;
+          function string(encoder, value2) {
+            var length = value2.length;
+            var maxsize = 5 + length * 3;
+            encoder.offset = encoder.reserve(maxsize);
+            var buffer2 = encoder.buffer;
+            var expected = head_size(length);
+            var start = encoder.offset + expected;
+            length = BufferProto.write.call(buffer2, value2, start);
+            var actual = head_size(length);
+            if (expected !== actual) {
+              var targetStart = start + actual - expected;
+              var end = start + length;
+              BufferProto.copy.call(buffer2, buffer2, targetStart, start, end);
+            }
+            var type = actual === 1 ? 160 + length : actual <= 3 ? 215 + actual : 219;
+            token[type](encoder, length);
+            encoder.offset += length;
+          }
+        }
+        function object(encoder, value2) {
+          if (value2 === null) return nil(encoder, value2);
+          if (isBuffer(value2)) return bin(encoder, value2);
+          if (IS_ARRAY(value2)) return array(encoder, value2);
+          if (Uint64BE.isUint64BE(value2)) return uint64(encoder, value2);
+          if (Int64BE.isInt64BE(value2)) return int64(encoder, value2);
+          var packer = encoder.codec.getExtPacker(value2);
+          if (packer) value2 = packer(value2);
+          if (value2 instanceof ExtBuffer) return ext(encoder, value2);
+          map(encoder, value2);
+        }
+        function object_raw(encoder, value2) {
+          if (isBuffer(value2)) return raw(encoder, value2);
+          object(encoder, value2);
+        }
+        function nil(encoder, value2) {
+          var type = 192;
+          token[type](encoder, value2);
+        }
+        function array(encoder, value2) {
+          var length = value2.length;
+          var type = length < 16 ? 144 + length : length <= 65535 ? 220 : 221;
+          token[type](encoder, length);
+          var encode4 = encoder.codec.encode;
+          for (var i = 0; i < length; i++) {
+            encode4(encoder, value2[i]);
+          }
+        }
+        function bin_buffer(encoder, value2) {
+          var length = value2.length;
+          var type = length < 255 ? 196 : length <= 65535 ? 197 : 198;
+          token[type](encoder, length);
+          encoder.send(value2);
+        }
+        function bin_arraybuffer(encoder, value2) {
+          bin_buffer(encoder, new Uint8Array(value2));
+        }
+        function ext(encoder, value2) {
+          var buffer2 = value2.buffer;
+          var length = buffer2.length;
+          var type = extmap[length] || (length < 255 ? 199 : length <= 65535 ? 200 : 201);
+          token[type](encoder, length);
+          uint8[value2.type](encoder);
+          encoder.send(buffer2);
+        }
+        function obj_to_map(encoder, value2) {
+          var keys = Object.keys(value2);
+          var length = keys.length;
+          var type = length < 16 ? 128 + length : length <= 65535 ? 222 : 223;
+          token[type](encoder, length);
+          var encode4 = encoder.codec.encode;
+          keys.forEach(function(key) {
+            encode4(encoder, key);
+            encode4(encoder, value2[key]);
+          });
+        }
+        function map_to_map(encoder, value2) {
+          if (!(value2 instanceof Map)) return obj_to_map(encoder, value2);
+          var length = value2.size;
+          var type = length < 16 ? 128 + length : length <= 65535 ? 222 : 223;
+          token[type](encoder, length);
+          var encode4 = encoder.codec.encode;
+          value2.forEach(function(val, key, m) {
+            encode4(encoder, key);
+            encode4(encoder, val);
+          });
+        }
+        function raw(encoder, value2) {
+          var length = value2.length;
+          var type = length < 32 ? 160 + length : length <= 65535 ? 218 : 219;
+          token[type](encoder, length);
+          encoder.send(value2);
+        }
+      }
+    }
+  });
+
+  // node_modules/msgpack-lite/lib/codec-base.js
+  var require_codec_base = __commonJS({
+    "node_modules/msgpack-lite/lib/codec-base.js"(exports) {
+      var IS_ARRAY = require_isarray();
+      exports.createCodec = createCodec;
+      exports.install = install;
+      exports.filter = filter;
+      var Bufferish = require_bufferish();
+      function Codec(options) {
+        if (!(this instanceof Codec)) return new Codec(options);
+        this.options = options;
+        this.init();
+      }
+      Codec.prototype.init = function() {
+        var options = this.options;
+        if (options && options.uint8array) {
+          this.bufferish = Bufferish.Uint8Array;
+        }
+        return this;
+      };
+      function install(props) {
+        for (var key in props) {
+          Codec.prototype[key] = add2(Codec.prototype[key], props[key]);
+        }
+      }
+      function add2(a, b) {
+        return a && b ? ab : a || b;
+        function ab() {
+          a.apply(this, arguments);
+          return b.apply(this, arguments);
+        }
+      }
+      function join(filters) {
+        filters = filters.slice();
+        return function(value2) {
+          return filters.reduce(iterator, value2);
+        };
+        function iterator(value2, filter2) {
+          return filter2(value2);
+        }
+      }
+      function filter(filter2) {
+        return IS_ARRAY(filter2) ? join(filter2) : filter2;
+      }
+      function createCodec(options) {
+        return new Codec(options);
+      }
+      exports.preset = createCodec({ preset: true });
+    }
+  });
+
+  // node_modules/msgpack-lite/lib/write-core.js
+  var require_write_core = __commonJS({
+    "node_modules/msgpack-lite/lib/write-core.js"(exports) {
+      var ExtBuffer = require_ext_buffer().ExtBuffer;
+      var ExtPacker = require_ext_packer();
+      var WriteType = require_write_type();
+      var CodecBase = require_codec_base();
+      CodecBase.install({
+        addExtPacker,
+        getExtPacker,
+        init
+      });
+      exports.preset = init.call(CodecBase.preset);
+      function getEncoder(options) {
+        var writeType = WriteType.getWriteType(options);
+        return encode4;
+        function encode4(encoder, value2) {
+          var func = writeType[typeof value2];
+          if (!func) throw new Error('Unsupported type "' + typeof value2 + '": ' + value2);
+          func(encoder, value2);
+        }
+      }
+      function init() {
+        var options = this.options;
+        this.encode = getEncoder(options);
+        if (options && options.preset) {
+          ExtPacker.setExtPackers(this);
+        }
+        return this;
+      }
+      function addExtPacker(etype, Class, packer) {
+        packer = CodecBase.filter(packer);
+        var name = Class.name;
+        if (name && name !== "Object") {
+          var packers = this.extPackers || (this.extPackers = {});
+          packers[name] = extPacker;
+        } else {
+          var list = this.extEncoderList || (this.extEncoderList = []);
+          list.unshift([Class, extPacker]);
+        }
+        function extPacker(value2) {
+          if (packer) value2 = packer(value2);
+          return new ExtBuffer(value2, etype);
+        }
+      }
+      function getExtPacker(value2) {
+        var packers = this.extPackers || (this.extPackers = {});
+        var c = value2.constructor;
+        var e = c && c.name && packers[c.name];
+        if (e) return e;
+        var list = this.extEncoderList || (this.extEncoderList = []);
+        var len = list.length;
+        for (var i = 0; i < len; i++) {
+          var pair = list[i];
+          if (c === pair[0]) return pair[1];
+        }
+      }
+    }
+  });
+
+  // node_modules/msgpack-lite/lib/flex-buffer.js
+  var require_flex_buffer = __commonJS({
+    "node_modules/msgpack-lite/lib/flex-buffer.js"(exports) {
+      exports.FlexDecoder = FlexDecoder;
+      exports.FlexEncoder = FlexEncoder;
+      var Bufferish = require_bufferish();
+      var MIN_BUFFER_SIZE = 2048;
+      var MAX_BUFFER_SIZE = 65536;
+      var BUFFER_SHORTAGE = "BUFFER_SHORTAGE";
+      function FlexDecoder() {
+        if (!(this instanceof FlexDecoder)) return new FlexDecoder();
+      }
+      function FlexEncoder() {
+        if (!(this instanceof FlexEncoder)) return new FlexEncoder();
+      }
+      FlexDecoder.mixin = mixinFactory(getDecoderMethods());
+      FlexDecoder.mixin(FlexDecoder.prototype);
+      FlexEncoder.mixin = mixinFactory(getEncoderMethods());
+      FlexEncoder.mixin(FlexEncoder.prototype);
+      function getDecoderMethods() {
+        return {
+          bufferish: Bufferish,
+          write: write2,
+          fetch: fetch2,
+          flush,
+          push,
+          pull,
+          read,
+          reserve,
+          offset: 0
+        };
+        function write2(chunk) {
+          var prev = this.offset ? Bufferish.prototype.slice.call(this.buffer, this.offset) : this.buffer;
+          this.buffer = prev ? chunk ? this.bufferish.concat([prev, chunk]) : prev : chunk;
+          this.offset = 0;
+        }
+        function flush() {
+          while (this.offset < this.buffer.length) {
+            var start = this.offset;
+            var value2;
+            try {
+              value2 = this.fetch();
+            } catch (e) {
+              if (e && e.message != BUFFER_SHORTAGE) throw e;
+              this.offset = start;
+              break;
+            }
+            this.push(value2);
+          }
+        }
+        function reserve(length) {
+          var start = this.offset;
+          var end = start + length;
+          if (end > this.buffer.length) throw new Error(BUFFER_SHORTAGE);
+          this.offset = end;
+          return start;
+        }
+      }
+      function getEncoderMethods() {
+        return {
+          bufferish: Bufferish,
+          write,
+          fetch: fetch3,
+          flush,
+          push,
+          pull: pull2,
+          read,
+          reserve,
+          send,
+          maxBufferSize: MAX_BUFFER_SIZE,
+          minBufferSize: MIN_BUFFER_SIZE,
+          offset: 0,
+          start: 0
+        };
+        function fetch3() {
+          var start = this.start;
+          if (start < this.offset) {
+            var end = this.start = this.offset;
+            return Bufferish.prototype.slice.call(this.buffer, start, end);
+          }
+        }
+        function flush() {
+          while (this.start < this.offset) {
+            var value2 = this.fetch();
+            if (value2) this.push(value2);
+          }
+        }
+        function pull2() {
+          var buffers = this.buffers || (this.buffers = []);
+          var chunk = buffers.length > 1 ? this.bufferish.concat(buffers) : buffers[0];
+          buffers.length = 0;
+          return chunk;
+        }
+        function reserve(length) {
+          var req = length | 0;
+          if (this.buffer) {
+            var size = this.buffer.length;
+            var start = this.offset | 0;
+            var end = start + req;
+            if (end < size) {
+              this.offset = end;
+              return start;
+            }
+            this.flush();
+            length = Math.max(length, Math.min(size * 2, this.maxBufferSize));
+          }
+          length = Math.max(length, this.minBufferSize);
+          this.buffer = this.bufferish.alloc(length);
+          this.start = 0;
+          this.offset = req;
+          return 0;
+        }
+        function send(buffer2) {
+          var length = buffer2.length;
+          if (length > this.minBufferSize) {
+            this.flush();
+            this.push(buffer2);
+          } else {
+            var offset = this.reserve(length);
+            Bufferish.prototype.copy.call(buffer2, this.buffer, offset);
+          }
+        }
+      }
+      function write() {
+        throw new Error("method not implemented: write()");
+      }
+      function fetch2() {
+        throw new Error("method not implemented: fetch()");
+      }
+      function read() {
+        var length = this.buffers && this.buffers.length;
+        if (!length) return this.fetch();
+        this.flush();
+        return this.pull();
+      }
+      function push(chunk) {
+        var buffers = this.buffers || (this.buffers = []);
+        buffers.push(chunk);
+      }
+      function pull() {
+        var buffers = this.buffers || (this.buffers = []);
+        return buffers.shift();
+      }
+      function mixinFactory(source) {
+        return mixin2;
+        function mixin2(target) {
+          for (var key in source) {
+            target[key] = source[key];
+          }
+          return target;
+        }
+      }
+    }
+  });
+
+  // node_modules/msgpack-lite/lib/encode-buffer.js
+  var require_encode_buffer = __commonJS({
+    "node_modules/msgpack-lite/lib/encode-buffer.js"(exports) {
+      exports.EncodeBuffer = EncodeBuffer;
+      var preset = require_write_core().preset;
+      var FlexEncoder = require_flex_buffer().FlexEncoder;
+      FlexEncoder.mixin(EncodeBuffer.prototype);
+      function EncodeBuffer(options) {
+        if (!(this instanceof EncodeBuffer)) return new EncodeBuffer(options);
+        if (options) {
+          this.options = options;
+          if (options.codec) {
+            var codec = this.codec = options.codec;
+            if (codec.bufferish) this.bufferish = codec.bufferish;
+          }
+        }
+      }
+      EncodeBuffer.prototype.codec = preset;
+      EncodeBuffer.prototype.write = function(input) {
+        this.codec.encode(this, input);
+      };
+    }
+  });
+
+  // node_modules/msgpack-lite/lib/encode.js
+  var require_encode = __commonJS({
+    "node_modules/msgpack-lite/lib/encode.js"(exports) {
+      exports.encode = encode4;
+      var EncodeBuffer = require_encode_buffer().EncodeBuffer;
+      function encode4(input, options) {
+        var encoder = new EncodeBuffer(options);
+        encoder.write(input);
+        return encoder.read();
+      }
+    }
+  });
+
+  // node_modules/msgpack-lite/lib/ext-unpacker.js
+  var require_ext_unpacker = __commonJS({
+    "node_modules/msgpack-lite/lib/ext-unpacker.js"(exports) {
+      exports.setExtUnpackers = setExtUnpackers;
+      var Bufferish = require_bufferish();
+      var Buffer2 = Bufferish.global;
+      var _decode;
+      var ERROR_COLUMNS = { name: 1, message: 1, stack: 1, columnNumber: 1, fileName: 1, lineNumber: 1 };
+      function setExtUnpackers(codec) {
+        codec.addExtUnpacker(14, [decode5, unpackError(Error)]);
+        codec.addExtUnpacker(1, [decode5, unpackError(EvalError)]);
+        codec.addExtUnpacker(2, [decode5, unpackError(RangeError)]);
+        codec.addExtUnpacker(3, [decode5, unpackError(ReferenceError)]);
+        codec.addExtUnpacker(4, [decode5, unpackError(SyntaxError)]);
+        codec.addExtUnpacker(5, [decode5, unpackError(TypeError)]);
+        codec.addExtUnpacker(6, [decode5, unpackError(URIError)]);
+        codec.addExtUnpacker(10, [decode5, unpackRegExp]);
+        codec.addExtUnpacker(11, [decode5, unpackClass(Boolean)]);
+        codec.addExtUnpacker(12, [decode5, unpackClass(String)]);
+        codec.addExtUnpacker(13, [decode5, unpackClass(Date)]);
+        codec.addExtUnpacker(15, [decode5, unpackClass(Number)]);
+        if ("undefined" !== typeof Uint8Array) {
+          codec.addExtUnpacker(17, unpackClass(Int8Array));
+          codec.addExtUnpacker(18, unpackClass(Uint8Array));
+          codec.addExtUnpacker(19, [unpackArrayBuffer, unpackClass(Int16Array)]);
+          codec.addExtUnpacker(20, [unpackArrayBuffer, unpackClass(Uint16Array)]);
+          codec.addExtUnpacker(21, [unpackArrayBuffer, unpackClass(Int32Array)]);
+          codec.addExtUnpacker(22, [unpackArrayBuffer, unpackClass(Uint32Array)]);
+          codec.addExtUnpacker(23, [unpackArrayBuffer, unpackClass(Float32Array)]);
+          if ("undefined" !== typeof Float64Array) {
+            codec.addExtUnpacker(24, [unpackArrayBuffer, unpackClass(Float64Array)]);
+          }
+          if ("undefined" !== typeof Uint8ClampedArray) {
+            codec.addExtUnpacker(25, unpackClass(Uint8ClampedArray));
+          }
+          codec.addExtUnpacker(26, unpackArrayBuffer);
+          codec.addExtUnpacker(29, [unpackArrayBuffer, unpackClass(DataView)]);
+        }
+        if (Bufferish.hasBuffer) {
+          codec.addExtUnpacker(27, unpackClass(Buffer2));
+        }
+      }
+      function decode5(input) {
+        if (!_decode) _decode = require_decode().decode;
+        return _decode(input);
+      }
+      function unpackRegExp(value2) {
+        return RegExp.apply(null, value2);
+      }
+      function unpackError(Class) {
+        return function(value2) {
+          var out = new Class();
+          for (var key in ERROR_COLUMNS) {
+            out[key] = value2[key];
+          }
+          return out;
+        };
+      }
+      function unpackClass(Class) {
+        return function(value2) {
+          return new Class(value2);
+        };
+      }
+      function unpackArrayBuffer(value2) {
+        return new Uint8Array(value2).buffer;
+      }
+    }
+  });
+
+  // node_modules/msgpack-lite/lib/read-format.js
+  var require_read_format = __commonJS({
+    "node_modules/msgpack-lite/lib/read-format.js"(exports) {
+      var ieee754 = require_ieee754();
+      var Int64Buffer = require_int64_buffer();
+      var Uint64BE = Int64Buffer.Uint64BE;
+      var Int64BE = Int64Buffer.Int64BE;
+      exports.getReadFormat = getReadFormat;
+      exports.readUint8 = uint8;
+      var Bufferish = require_bufferish();
+      var BufferProto = require_bufferish_proto();
+      var HAS_MAP = "undefined" !== typeof Map;
+      var NO_ASSERT = true;
+      function getReadFormat(options) {
+        var binarraybuffer = Bufferish.hasArrayBuffer && options && options.binarraybuffer;
+        var int64 = options && options.int64;
+        var usemap = HAS_MAP && options && options.usemap;
+        var readFormat = {
+          map: usemap ? map_to_map : map_to_obj,
+          array,
+          str,
+          bin: binarraybuffer ? bin_arraybuffer : bin_buffer,
+          ext,
+          uint8,
+          uint16,
+          uint32,
+          uint64: read(8, int64 ? readUInt64BE_int64 : readUInt64BE),
+          int8,
+          int16,
+          int32,
+          int64: read(8, int64 ? readInt64BE_int64 : readInt64BE),
+          float32: read(4, readFloatBE),
+          float64: read(8, readDoubleBE)
+        };
+        return readFormat;
+      }
+      function map_to_obj(decoder, len) {
+        var value2 = {};
+        var i;
+        var k = new Array(len);
+        var v = new Array(len);
+        var decode5 = decoder.codec.decode;
+        for (i = 0; i < len; i++) {
+          k[i] = decode5(decoder);
+          v[i] = decode5(decoder);
+        }
+        for (i = 0; i < len; i++) {
+          value2[k[i]] = v[i];
+        }
+        return value2;
+      }
+      function map_to_map(decoder, len) {
+        var value2 = /* @__PURE__ */ new Map();
+        var i;
+        var k = new Array(len);
+        var v = new Array(len);
+        var decode5 = decoder.codec.decode;
+        for (i = 0; i < len; i++) {
+          k[i] = decode5(decoder);
+          v[i] = decode5(decoder);
+        }
+        for (i = 0; i < len; i++) {
+          value2.set(k[i], v[i]);
+        }
+        return value2;
+      }
+      function array(decoder, len) {
+        var value2 = new Array(len);
+        var decode5 = decoder.codec.decode;
+        for (var i = 0; i < len; i++) {
+          value2[i] = decode5(decoder);
+        }
+        return value2;
+      }
+      function str(decoder, len) {
+        var start = decoder.reserve(len);
+        var end = start + len;
+        return BufferProto.toString.call(decoder.buffer, "utf-8", start, end);
+      }
+      function bin_buffer(decoder, len) {
+        var start = decoder.reserve(len);
+        var end = start + len;
+        var buf = BufferProto.slice.call(decoder.buffer, start, end);
+        return Bufferish.from(buf);
+      }
+      function bin_arraybuffer(decoder, len) {
+        var start = decoder.reserve(len);
+        var end = start + len;
+        var buf = BufferProto.slice.call(decoder.buffer, start, end);
+        return Bufferish.Uint8Array.from(buf).buffer;
+      }
+      function ext(decoder, len) {
+        var start = decoder.reserve(len + 1);
+        var type = decoder.buffer[start++];
+        var end = start + len;
+        var unpack = decoder.codec.getExtUnpacker(type);
+        if (!unpack) throw new Error("Invalid ext type: " + (type ? "0x" + type.toString(16) : type));
+        var buf = BufferProto.slice.call(decoder.buffer, start, end);
+        return unpack(buf);
+      }
+      function uint8(decoder) {
+        var start = decoder.reserve(1);
+        return decoder.buffer[start];
+      }
+      function int8(decoder) {
+        var start = decoder.reserve(1);
+        var value2 = decoder.buffer[start];
+        return value2 & 128 ? value2 - 256 : value2;
+      }
+      function uint16(decoder) {
+        var start = decoder.reserve(2);
+        var buffer2 = decoder.buffer;
+        return buffer2[start++] << 8 | buffer2[start];
+      }
+      function int16(decoder) {
+        var start = decoder.reserve(2);
+        var buffer2 = decoder.buffer;
+        var value2 = buffer2[start++] << 8 | buffer2[start];
+        return value2 & 32768 ? value2 - 65536 : value2;
+      }
+      function uint32(decoder) {
+        var start = decoder.reserve(4);
+        var buffer2 = decoder.buffer;
+        return buffer2[start++] * 16777216 + (buffer2[start++] << 16) + (buffer2[start++] << 8) + buffer2[start];
+      }
+      function int32(decoder) {
+        var start = decoder.reserve(4);
+        var buffer2 = decoder.buffer;
+        return buffer2[start++] << 24 | buffer2[start++] << 16 | buffer2[start++] << 8 | buffer2[start];
+      }
+      function read(len, method) {
+        return function(decoder) {
+          var start = decoder.reserve(len);
+          return method.call(decoder.buffer, start, NO_ASSERT);
+        };
+      }
+      function readUInt64BE(start) {
+        return new Uint64BE(this, start).toNumber();
+      }
+      function readInt64BE(start) {
+        return new Int64BE(this, start).toNumber();
+      }
+      function readUInt64BE_int64(start) {
+        return new Uint64BE(this, start);
+      }
+      function readInt64BE_int64(start) {
+        return new Int64BE(this, start);
+      }
+      function readFloatBE(start) {
+        return ieee754.read(this, start, false, 23, 4);
+      }
+      function readDoubleBE(start) {
+        return ieee754.read(this, start, false, 52, 8);
+      }
+    }
+  });
+
+  // node_modules/msgpack-lite/lib/read-token.js
+  var require_read_token = __commonJS({
+    "node_modules/msgpack-lite/lib/read-token.js"(exports) {
+      var ReadFormat = require_read_format();
+      exports.getReadToken = getReadToken;
+      function getReadToken(options) {
+        var format = ReadFormat.getReadFormat(options);
+        if (options && options.useraw) {
+          return init_useraw(format);
+        } else {
+          return init_token(format);
+        }
+      }
+      function init_token(format) {
+        var i;
+        var token = new Array(256);
+        for (i = 0; i <= 127; i++) {
+          token[i] = constant(i);
+        }
+        for (i = 128; i <= 143; i++) {
+          token[i] = fix(i - 128, format.map);
+        }
+        for (i = 144; i <= 159; i++) {
+          token[i] = fix(i - 144, format.array);
+        }
+        for (i = 160; i <= 191; i++) {
+          token[i] = fix(i - 160, format.str);
+        }
+        token[192] = constant(null);
+        token[193] = null;
+        token[194] = constant(false);
+        token[195] = constant(true);
+        token[196] = flex(format.uint8, format.bin);
+        token[197] = flex(format.uint16, format.bin);
+        token[198] = flex(format.uint32, format.bin);
+        token[199] = flex(format.uint8, format.ext);
+        token[200] = flex(format.uint16, format.ext);
+        token[201] = flex(format.uint32, format.ext);
+        token[202] = format.float32;
+        token[203] = format.float64;
+        token[204] = format.uint8;
+        token[205] = format.uint16;
+        token[206] = format.uint32;
+        token[207] = format.uint64;
+        token[208] = format.int8;
+        token[209] = format.int16;
+        token[210] = format.int32;
+        token[211] = format.int64;
+        token[212] = fix(1, format.ext);
+        token[213] = fix(2, format.ext);
+        token[214] = fix(4, format.ext);
+        token[215] = fix(8, format.ext);
+        token[216] = fix(16, format.ext);
+        token[217] = flex(format.uint8, format.str);
+        token[218] = flex(format.uint16, format.str);
+        token[219] = flex(format.uint32, format.str);
+        token[220] = flex(format.uint16, format.array);
+        token[221] = flex(format.uint32, format.array);
+        token[222] = flex(format.uint16, format.map);
+        token[223] = flex(format.uint32, format.map);
+        for (i = 224; i <= 255; i++) {
+          token[i] = constant(i - 256);
+        }
+        return token;
+      }
+      function init_useraw(format) {
+        var i;
+        var token = init_token(format).slice();
+        token[217] = token[196];
+        token[218] = token[197];
+        token[219] = token[198];
+        for (i = 160; i <= 191; i++) {
+          token[i] = fix(i - 160, format.bin);
+        }
+        return token;
+      }
+      function constant(value2) {
+        return function() {
+          return value2;
+        };
+      }
+      function flex(lenFunc, decodeFunc) {
+        return function(decoder) {
+          var len = lenFunc(decoder);
+          return decodeFunc(decoder, len);
+        };
+      }
+      function fix(len, method) {
+        return function(decoder) {
+          return method(decoder, len);
+        };
+      }
+    }
+  });
+
+  // node_modules/msgpack-lite/lib/read-core.js
+  var require_read_core = __commonJS({
+    "node_modules/msgpack-lite/lib/read-core.js"(exports) {
+      var ExtBuffer = require_ext_buffer().ExtBuffer;
+      var ExtUnpacker = require_ext_unpacker();
+      var readUint8 = require_read_format().readUint8;
+      var ReadToken = require_read_token();
+      var CodecBase = require_codec_base();
+      CodecBase.install({
+        addExtUnpacker,
+        getExtUnpacker,
+        init
+      });
+      exports.preset = init.call(CodecBase.preset);
+      function getDecoder(options) {
+        var readToken = ReadToken.getReadToken(options);
+        return decode5;
+        function decode5(decoder) {
+          var type = readUint8(decoder);
+          var func = readToken[type];
+          if (!func) throw new Error("Invalid type: " + (type ? "0x" + type.toString(16) : type));
+          return func(decoder);
+        }
+      }
+      function init() {
+        var options = this.options;
+        this.decode = getDecoder(options);
+        if (options && options.preset) {
+          ExtUnpacker.setExtUnpackers(this);
+        }
+        return this;
+      }
+      function addExtUnpacker(etype, unpacker) {
+        var unpackers = this.extUnpackers || (this.extUnpackers = []);
+        unpackers[etype] = CodecBase.filter(unpacker);
+      }
+      function getExtUnpacker(type) {
+        var unpackers = this.extUnpackers || (this.extUnpackers = []);
+        return unpackers[type] || extUnpacker;
+        function extUnpacker(buffer2) {
+          return new ExtBuffer(buffer2, type);
+        }
+      }
+    }
+  });
+
+  // node_modules/msgpack-lite/lib/decode-buffer.js
+  var require_decode_buffer = __commonJS({
+    "node_modules/msgpack-lite/lib/decode-buffer.js"(exports) {
+      exports.DecodeBuffer = DecodeBuffer;
+      var preset = require_read_core().preset;
+      var FlexDecoder = require_flex_buffer().FlexDecoder;
+      FlexDecoder.mixin(DecodeBuffer.prototype);
+      function DecodeBuffer(options) {
+        if (!(this instanceof DecodeBuffer)) return new DecodeBuffer(options);
+        if (options) {
+          this.options = options;
+          if (options.codec) {
+            var codec = this.codec = options.codec;
+            if (codec.bufferish) this.bufferish = codec.bufferish;
+          }
+        }
+      }
+      DecodeBuffer.prototype.codec = preset;
+      DecodeBuffer.prototype.fetch = function() {
+        return this.codec.decode(this);
+      };
+    }
+  });
+
+  // node_modules/msgpack-lite/lib/decode.js
   var require_decode = __commonJS({
-    "node_modules/notepack.io/browser/decode.js"(exports, module) {
-      "use strict";
-      function Decoder2(buffer2) {
-        this._offset = 0;
-        if (buffer2 instanceof ArrayBuffer) {
-          this._buffer = buffer2;
-          this._view = new DataView(this._buffer);
-        } else if (ArrayBuffer.isView(buffer2)) {
-          this._buffer = buffer2.buffer;
-          this._view = new DataView(this._buffer, buffer2.byteOffset, buffer2.byteLength);
-        } else {
-          throw new Error("Invalid argument");
-        }
+    "node_modules/msgpack-lite/lib/decode.js"(exports) {
+      exports.decode = decode5;
+      var DecodeBuffer = require_decode_buffer().DecodeBuffer;
+      function decode5(input, options) {
+        var decoder = new DecodeBuffer(options);
+        decoder.write(input);
+        return decoder.read();
       }
-      function utf8Read(view, offset, length) {
-        var string = "", chr = 0;
-        for (var i = offset, end = offset + length; i < end; i++) {
-          var byte = view.getUint8(i);
-          if ((byte & 128) === 0) {
-            string += String.fromCharCode(byte);
-            continue;
-          }
-          if ((byte & 224) === 192) {
-            string += String.fromCharCode(
-              (byte & 31) << 6 | view.getUint8(++i) & 63
-            );
-            continue;
-          }
-          if ((byte & 240) === 224) {
-            string += String.fromCharCode(
-              (byte & 15) << 12 | (view.getUint8(++i) & 63) << 6 | (view.getUint8(++i) & 63) << 0
-            );
-            continue;
-          }
-          if ((byte & 248) === 240) {
-            chr = (byte & 7) << 18 | (view.getUint8(++i) & 63) << 12 | (view.getUint8(++i) & 63) << 6 | (view.getUint8(++i) & 63) << 0;
-            if (chr >= 65536) {
-              chr -= 65536;
-              string += String.fromCharCode((chr >>> 10) + 55296, (chr & 1023) + 56320);
-            } else {
-              string += String.fromCharCode(chr);
-            }
-            continue;
-          }
-          throw new Error("Invalid byte " + byte.toString(16));
-        }
-        return string;
-      }
-      Decoder2.prototype._array = function(length) {
-        var value2 = new Array(length);
-        for (var i = 0; i < length; i++) {
-          value2[i] = this._parse();
-        }
-        return value2;
-      };
-      Decoder2.prototype._map = function(length) {
-        var key = "", value2 = {};
-        for (var i = 0; i < length; i++) {
-          key = this._parse();
-          value2[key] = this._parse();
-        }
-        return value2;
-      };
-      Decoder2.prototype._str = function(length) {
-        var value2 = utf8Read(this._view, this._offset, length);
-        this._offset += length;
-        return value2;
-      };
-      Decoder2.prototype._bin = function(length) {
-        var value2 = this._buffer.slice(this._offset, this._offset + length);
-        this._offset += length;
-        return value2;
-      };
-      Decoder2.prototype._parse = function() {
-        var prefix = this._view.getUint8(this._offset++);
-        var value2, length = 0, type = 0, hi = 0, lo = 0;
-        if (prefix < 192) {
-          if (prefix < 128) {
-            return prefix;
-          }
-          if (prefix < 144) {
-            return this._map(prefix & 15);
-          }
-          if (prefix < 160) {
-            return this._array(prefix & 15);
-          }
-          return this._str(prefix & 31);
-        }
-        if (prefix > 223) {
-          return (255 - prefix + 1) * -1;
-        }
-        switch (prefix) {
-          // nil
-          case 192:
-            return null;
-          // false
-          case 194:
-            return false;
-          // true
-          case 195:
-            return true;
-          // bin
-          case 196:
-            length = this._view.getUint8(this._offset);
-            this._offset += 1;
-            return this._bin(length);
-          case 197:
-            length = this._view.getUint16(this._offset);
-            this._offset += 2;
-            return this._bin(length);
-          case 198:
-            length = this._view.getUint32(this._offset);
-            this._offset += 4;
-            return this._bin(length);
-          // ext
-          case 199:
-            length = this._view.getUint8(this._offset);
-            type = this._view.getInt8(this._offset + 1);
-            this._offset += 2;
-            if (type === -1) {
-              var ns = this._view.getUint32(this._offset);
-              hi = this._view.getInt32(this._offset + 4);
-              lo = this._view.getUint32(this._offset + 8);
-              this._offset += 12;
-              return new Date((hi * 4294967296 + lo) * 1e3 + ns / 1e6);
-            }
-            return [type, this._bin(length)];
-          case 200:
-            length = this._view.getUint16(this._offset);
-            type = this._view.getInt8(this._offset + 2);
-            this._offset += 3;
-            return [type, this._bin(length)];
-          case 201:
-            length = this._view.getUint32(this._offset);
-            type = this._view.getInt8(this._offset + 4);
-            this._offset += 5;
-            return [type, this._bin(length)];
-          // float
-          case 202:
-            value2 = this._view.getFloat32(this._offset);
-            this._offset += 4;
-            return value2;
-          case 203:
-            value2 = this._view.getFloat64(this._offset);
-            this._offset += 8;
-            return value2;
-          // uint
-          case 204:
-            value2 = this._view.getUint8(this._offset);
-            this._offset += 1;
-            return value2;
-          case 205:
-            value2 = this._view.getUint16(this._offset);
-            this._offset += 2;
-            return value2;
-          case 206:
-            value2 = this._view.getUint32(this._offset);
-            this._offset += 4;
-            return value2;
-          case 207:
-            hi = this._view.getUint32(this._offset) * Math.pow(2, 32);
-            lo = this._view.getUint32(this._offset + 4);
-            this._offset += 8;
-            return hi + lo;
-          // int
-          case 208:
-            value2 = this._view.getInt8(this._offset);
-            this._offset += 1;
-            return value2;
-          case 209:
-            value2 = this._view.getInt16(this._offset);
-            this._offset += 2;
-            return value2;
-          case 210:
-            value2 = this._view.getInt32(this._offset);
-            this._offset += 4;
-            return value2;
-          case 211:
-            hi = this._view.getInt32(this._offset) * Math.pow(2, 32);
-            lo = this._view.getUint32(this._offset + 4);
-            this._offset += 8;
-            return hi + lo;
-          // fixext
-          case 212:
-            type = this._view.getInt8(this._offset);
-            this._offset += 1;
-            if (type === 0) {
-              this._offset += 1;
-              return void 0;
-            }
-            return [type, this._bin(1)];
-          case 213:
-            type = this._view.getInt8(this._offset);
-            this._offset += 1;
-            return [type, this._bin(2)];
-          case 214:
-            type = this._view.getInt8(this._offset);
-            this._offset += 1;
-            if (type === -1) {
-              value2 = this._view.getUint32(this._offset);
-              this._offset += 4;
-              return new Date(value2 * 1e3);
-            }
-            return [type, this._bin(4)];
-          case 215:
-            type = this._view.getInt8(this._offset);
-            this._offset += 1;
-            if (type === 0) {
-              hi = this._view.getInt32(this._offset) * Math.pow(2, 32);
-              lo = this._view.getUint32(this._offset + 4);
-              this._offset += 8;
-              return new Date(hi + lo);
-            }
-            if (type === -1) {
-              hi = this._view.getUint32(this._offset);
-              lo = this._view.getUint32(this._offset + 4);
-              this._offset += 8;
-              var s = (hi & 3) * 4294967296 + lo;
-              return new Date(s * 1e3 + (hi >>> 2) / 1e6);
-            }
-            return [type, this._bin(8)];
-          case 216:
-            type = this._view.getInt8(this._offset);
-            this._offset += 1;
-            return [type, this._bin(16)];
-          // str
-          case 217:
-            length = this._view.getUint8(this._offset);
-            this._offset += 1;
-            return this._str(length);
-          case 218:
-            length = this._view.getUint16(this._offset);
-            this._offset += 2;
-            return this._str(length);
-          case 219:
-            length = this._view.getUint32(this._offset);
-            this._offset += 4;
-            return this._str(length);
-          // array
-          case 220:
-            length = this._view.getUint16(this._offset);
-            this._offset += 2;
-            return this._array(length);
-          case 221:
-            length = this._view.getUint32(this._offset);
-            this._offset += 4;
-            return this._array(length);
-          // map
-          case 222:
-            length = this._view.getUint16(this._offset);
-            this._offset += 2;
-            return this._map(length);
-          case 223:
-            length = this._view.getUint32(this._offset);
-            this._offset += 4;
-            return this._map(length);
-        }
-        throw new Error("Could not parse");
-      };
-      function decode5(buffer2) {
-        var decoder = new Decoder2(buffer2);
-        var value2 = decoder._parse();
-        if (decoder._offset !== buffer2.byteLength) {
-          throw new Error(buffer2.byteLength - decoder._offset + " trailing bytes");
-        }
-        return value2;
-      }
-      module.exports = decode5;
     }
   });
 
-  // node_modules/notepack.io/lib/index.js
-  var require_lib = __commonJS({
-    "node_modules/notepack.io/lib/index.js"(exports) {
-      exports.encode = require_encode();
-      exports.decode = require_decode();
-    }
-  });
-
-  // node_modules/socket.io-msgpack-parser/node_modules/notepack.io/browser/encode.js
-  var require_encode2 = __commonJS({
-    "node_modules/socket.io-msgpack-parser/node_modules/notepack.io/browser/encode.js"(exports, module) {
-      "use strict";
-      function utf8Write(view, offset, str) {
-        var c = 0;
-        for (var i = 0, l = str.length; i < l; i++) {
-          c = str.charCodeAt(i);
-          if (c < 128) {
-            view.setUint8(offset++, c);
-          } else if (c < 2048) {
-            view.setUint8(offset++, 192 | c >> 6);
-            view.setUint8(offset++, 128 | c & 63);
-          } else if (c < 55296 || c >= 57344) {
-            view.setUint8(offset++, 224 | c >> 12);
-            view.setUint8(offset++, 128 | c >> 6 & 63);
-            view.setUint8(offset++, 128 | c & 63);
-          } else {
-            i++;
-            c = 65536 + ((c & 1023) << 10 | str.charCodeAt(i) & 1023);
-            view.setUint8(offset++, 240 | c >> 18);
-            view.setUint8(offset++, 128 | c >> 12 & 63);
-            view.setUint8(offset++, 128 | c >> 6 & 63);
-            view.setUint8(offset++, 128 | c & 63);
-          }
-        }
+  // node_modules/event-lite/event-lite.js
+  var require_event_lite = __commonJS({
+    "node_modules/event-lite/event-lite.js"(exports, module) {
+      function EventLite() {
+        if (!(this instanceof EventLite)) return new EventLite();
       }
-      function utf8Length2(str) {
-        var c = 0, length = 0;
-        for (var i = 0, l = str.length; i < l; i++) {
-          c = str.charCodeAt(i);
-          if (c < 128) {
-            length += 1;
-          } else if (c < 2048) {
-            length += 2;
-          } else if (c < 55296 || c >= 57344) {
-            length += 3;
-          } else {
-            i++;
-            length += 4;
+      (function(EventLite2) {
+        if ("undefined" !== typeof module) module.exports = EventLite2;
+        var LISTENERS = "listeners";
+        var methods = {
+          on: on2,
+          once,
+          off,
+          emit
+        };
+        mixin2(EventLite2.prototype);
+        EventLite2.mixin = mixin2;
+        function mixin2(target) {
+          for (var key in methods) {
+            target[key] = methods[key];
           }
+          return target;
         }
-        return length;
-      }
-      function _encode(bytes, defers, value2) {
-        var type = typeof value2, i = 0, l = 0, hi = 0, lo = 0, length = 0, size = 0;
-        if (type === "string") {
-          length = utf8Length2(value2);
-          if (length < 32) {
-            bytes.push(length | 160);
-            size = 1;
-          } else if (length < 256) {
-            bytes.push(217, length);
-            size = 2;
-          } else if (length < 65536) {
-            bytes.push(218, length >> 8, length);
-            size = 3;
-          } else if (length < 4294967296) {
-            bytes.push(219, length >> 24, length >> 16, length >> 8, length);
-            size = 5;
-          } else {
-            throw new Error("String too long");
-          }
-          defers.push({ _str: value2, _length: length, _offset: bytes.length });
-          return size + length;
-        }
-        if (type === "number") {
-          if (Math.floor(value2) !== value2 || !isFinite(value2)) {
-            bytes.push(203);
-            defers.push({ _float: value2, _length: 8, _offset: bytes.length });
-            return 9;
-          }
-          if (value2 >= 0) {
-            if (value2 < 128) {
-              bytes.push(value2);
-              return 1;
-            }
-            if (value2 < 256) {
-              bytes.push(204, value2);
-              return 2;
-            }
-            if (value2 < 65536) {
-              bytes.push(205, value2 >> 8, value2);
-              return 3;
-            }
-            if (value2 < 4294967296) {
-              bytes.push(206, value2 >> 24, value2 >> 16, value2 >> 8, value2);
-              return 5;
-            }
-            hi = value2 / Math.pow(2, 32) >> 0;
-            lo = value2 >>> 0;
-            bytes.push(207, hi >> 24, hi >> 16, hi >> 8, hi, lo >> 24, lo >> 16, lo >> 8, lo);
-            return 9;
-          } else {
-            if (value2 >= -32) {
-              bytes.push(value2);
-              return 1;
-            }
-            if (value2 >= -128) {
-              bytes.push(208, value2);
-              return 2;
-            }
-            if (value2 >= -32768) {
-              bytes.push(209, value2 >> 8, value2);
-              return 3;
-            }
-            if (value2 >= -2147483648) {
-              bytes.push(210, value2 >> 24, value2 >> 16, value2 >> 8, value2);
-              return 5;
-            }
-            hi = Math.floor(value2 / Math.pow(2, 32));
-            lo = value2 >>> 0;
-            bytes.push(211, hi >> 24, hi >> 16, hi >> 8, hi, lo >> 24, lo >> 16, lo >> 8, lo);
-            return 9;
-          }
-        }
-        if (type === "object") {
-          if (value2 === null) {
-            bytes.push(192);
-            return 1;
-          }
-          if (Array.isArray(value2)) {
-            length = value2.length;
-            if (length < 16) {
-              bytes.push(length | 144);
-              size = 1;
-            } else if (length < 65536) {
-              bytes.push(220, length >> 8, length);
-              size = 3;
-            } else if (length < 4294967296) {
-              bytes.push(221, length >> 24, length >> 16, length >> 8, length);
-              size = 5;
-            } else {
-              throw new Error("Array too large");
-            }
-            for (i = 0; i < length; i++) {
-              size += _encode(bytes, defers, value2[i]);
-            }
-            return size;
-          }
-          if (value2 instanceof Date) {
-            var time = value2.getTime();
-            hi = Math.floor(time / Math.pow(2, 32));
-            lo = time >>> 0;
-            bytes.push(215, 0, hi >> 24, hi >> 16, hi >> 8, hi, lo >> 24, lo >> 16, lo >> 8, lo);
-            return 10;
-          }
-          if (value2 instanceof ArrayBuffer) {
-            length = value2.byteLength;
-            if (length < 256) {
-              bytes.push(196, length);
-              size = 2;
-            } else if (length < 65536) {
-              bytes.push(197, length >> 8, length);
-              size = 3;
-            } else if (length < 4294967296) {
-              bytes.push(198, length >> 24, length >> 16, length >> 8, length);
-              size = 5;
-            } else {
-              throw new Error("Buffer too large");
-            }
-            defers.push({ _bin: value2, _length: length, _offset: bytes.length });
-            return size + length;
-          }
-          if (typeof value2.toJSON === "function") {
-            return _encode(bytes, defers, value2.toJSON());
-          }
-          var keys = [], key = "";
-          var allKeys = Object.keys(value2);
-          for (i = 0, l = allKeys.length; i < l; i++) {
-            key = allKeys[i];
-            if (typeof value2[key] !== "function") {
-              keys.push(key);
-            }
-          }
-          length = keys.length;
-          if (length < 16) {
-            bytes.push(length | 128);
-            size = 1;
-          } else if (length < 65536) {
-            bytes.push(222, length >> 8, length);
-            size = 3;
-          } else if (length < 4294967296) {
-            bytes.push(223, length >> 24, length >> 16, length >> 8, length);
-            size = 5;
-          } else {
-            throw new Error("Object too large");
-          }
-          for (i = 0; i < length; i++) {
-            key = keys[i];
-            size += _encode(bytes, defers, key);
-            size += _encode(bytes, defers, value2[key]);
-          }
-          return size;
-        }
-        if (type === "boolean") {
-          bytes.push(value2 ? 195 : 194);
-          return 1;
-        }
-        if (type === "undefined") {
-          bytes.push(212, 0, 0);
-          return 3;
-        }
-        throw new Error("Could not encode");
-      }
-      function encode5(value2) {
-        var bytes = [];
-        var defers = [];
-        var size = _encode(bytes, defers, value2);
-        var buf = new ArrayBuffer(size);
-        var view = new DataView(buf);
-        var deferIndex = 0;
-        var deferWritten = 0;
-        var nextOffset = -1;
-        if (defers.length > 0) {
-          nextOffset = defers[0]._offset;
-        }
-        var defer, deferLength = 0, offset = 0;
-        for (var i = 0, l = bytes.length; i < l; i++) {
-          view.setUint8(deferWritten + i, bytes[i]);
-          if (i + 1 !== nextOffset) {
-            continue;
-          }
-          defer = defers[deferIndex];
-          deferLength = defer._length;
-          offset = deferWritten + nextOffset;
-          if (defer._bin) {
-            var bin = new Uint8Array(defer._bin);
-            for (var j = 0; j < deferLength; j++) {
-              view.setUint8(offset + j, bin[j]);
-            }
-          } else if (defer._str) {
-            utf8Write(view, offset, defer._str);
-          } else if (defer._float !== void 0) {
-            view.setFloat64(offset, defer._float);
-          }
-          deferIndex++;
-          deferWritten += deferLength;
-          if (defers[deferIndex]) {
-            nextOffset = defers[deferIndex]._offset;
-          }
-        }
-        return buf;
-      }
-      module.exports = encode5;
-    }
-  });
-
-  // node_modules/socket.io-msgpack-parser/node_modules/notepack.io/browser/decode.js
-  var require_decode2 = __commonJS({
-    "node_modules/socket.io-msgpack-parser/node_modules/notepack.io/browser/decode.js"(exports, module) {
-      "use strict";
-      function Decoder2(buffer2) {
-        this._offset = 0;
-        if (buffer2 instanceof ArrayBuffer) {
-          this._buffer = buffer2;
-          this._view = new DataView(this._buffer);
-        } else if (ArrayBuffer.isView(buffer2)) {
-          this._buffer = buffer2.buffer;
-          this._view = new DataView(this._buffer, buffer2.byteOffset, buffer2.byteLength);
-        } else {
-          throw new Error("Invalid argument");
-        }
-      }
-      function utf8Read(view, offset, length) {
-        var string = "", chr = 0;
-        for (var i = offset, end = offset + length; i < end; i++) {
-          var byte = view.getUint8(i);
-          if ((byte & 128) === 0) {
-            string += String.fromCharCode(byte);
-            continue;
-          }
-          if ((byte & 224) === 192) {
-            string += String.fromCharCode(
-              (byte & 31) << 6 | view.getUint8(++i) & 63
-            );
-            continue;
-          }
-          if ((byte & 240) === 224) {
-            string += String.fromCharCode(
-              (byte & 15) << 12 | (view.getUint8(++i) & 63) << 6 | (view.getUint8(++i) & 63) << 0
-            );
-            continue;
-          }
-          if ((byte & 248) === 240) {
-            chr = (byte & 7) << 18 | (view.getUint8(++i) & 63) << 12 | (view.getUint8(++i) & 63) << 6 | (view.getUint8(++i) & 63) << 0;
-            if (chr >= 65536) {
-              chr -= 65536;
-              string += String.fromCharCode((chr >>> 10) + 55296, (chr & 1023) + 56320);
-            } else {
-              string += String.fromCharCode(chr);
-            }
-            continue;
-          }
-          throw new Error("Invalid byte " + byte.toString(16));
-        }
-        return string;
-      }
-      Decoder2.prototype._array = function(length) {
-        var value2 = new Array(length);
-        for (var i = 0; i < length; i++) {
-          value2[i] = this._parse();
-        }
-        return value2;
-      };
-      Decoder2.prototype._map = function(length) {
-        var key = "", value2 = {};
-        for (var i = 0; i < length; i++) {
-          key = this._parse();
-          value2[key] = this._parse();
-        }
-        return value2;
-      };
-      Decoder2.prototype._str = function(length) {
-        var value2 = utf8Read(this._view, this._offset, length);
-        this._offset += length;
-        return value2;
-      };
-      Decoder2.prototype._bin = function(length) {
-        var value2 = this._buffer.slice(this._offset, this._offset + length);
-        this._offset += length;
-        return value2;
-      };
-      Decoder2.prototype._parse = function() {
-        var prefix = this._view.getUint8(this._offset++);
-        var value2, length = 0, type = 0, hi = 0, lo = 0;
-        if (prefix < 192) {
-          if (prefix < 128) {
-            return prefix;
-          }
-          if (prefix < 144) {
-            return this._map(prefix & 15);
-          }
-          if (prefix < 160) {
-            return this._array(prefix & 15);
-          }
-          return this._str(prefix & 31);
-        }
-        if (prefix > 223) {
-          return (255 - prefix + 1) * -1;
-        }
-        switch (prefix) {
-          // nil
-          case 192:
-            return null;
-          // false
-          case 194:
-            return false;
-          // true
-          case 195:
-            return true;
-          // bin
-          case 196:
-            length = this._view.getUint8(this._offset);
-            this._offset += 1;
-            return this._bin(length);
-          case 197:
-            length = this._view.getUint16(this._offset);
-            this._offset += 2;
-            return this._bin(length);
-          case 198:
-            length = this._view.getUint32(this._offset);
-            this._offset += 4;
-            return this._bin(length);
-          // ext
-          case 199:
-            length = this._view.getUint8(this._offset);
-            type = this._view.getInt8(this._offset + 1);
-            this._offset += 2;
-            return [type, this._bin(length)];
-          case 200:
-            length = this._view.getUint16(this._offset);
-            type = this._view.getInt8(this._offset + 2);
-            this._offset += 3;
-            return [type, this._bin(length)];
-          case 201:
-            length = this._view.getUint32(this._offset);
-            type = this._view.getInt8(this._offset + 4);
-            this._offset += 5;
-            return [type, this._bin(length)];
-          // float
-          case 202:
-            value2 = this._view.getFloat32(this._offset);
-            this._offset += 4;
-            return value2;
-          case 203:
-            value2 = this._view.getFloat64(this._offset);
-            this._offset += 8;
-            return value2;
-          // uint
-          case 204:
-            value2 = this._view.getUint8(this._offset);
-            this._offset += 1;
-            return value2;
-          case 205:
-            value2 = this._view.getUint16(this._offset);
-            this._offset += 2;
-            return value2;
-          case 206:
-            value2 = this._view.getUint32(this._offset);
-            this._offset += 4;
-            return value2;
-          case 207:
-            hi = this._view.getUint32(this._offset) * Math.pow(2, 32);
-            lo = this._view.getUint32(this._offset + 4);
-            this._offset += 8;
-            return hi + lo;
-          // int
-          case 208:
-            value2 = this._view.getInt8(this._offset);
-            this._offset += 1;
-            return value2;
-          case 209:
-            value2 = this._view.getInt16(this._offset);
-            this._offset += 2;
-            return value2;
-          case 210:
-            value2 = this._view.getInt32(this._offset);
-            this._offset += 4;
-            return value2;
-          case 211:
-            hi = this._view.getInt32(this._offset) * Math.pow(2, 32);
-            lo = this._view.getUint32(this._offset + 4);
-            this._offset += 8;
-            return hi + lo;
-          // fixext
-          case 212:
-            type = this._view.getInt8(this._offset);
-            this._offset += 1;
-            if (type === 0) {
-              this._offset += 1;
-              return void 0;
-            }
-            return [type, this._bin(1)];
-          case 213:
-            type = this._view.getInt8(this._offset);
-            this._offset += 1;
-            return [type, this._bin(2)];
-          case 214:
-            type = this._view.getInt8(this._offset);
-            this._offset += 1;
-            return [type, this._bin(4)];
-          case 215:
-            type = this._view.getInt8(this._offset);
-            this._offset += 1;
-            if (type === 0) {
-              hi = this._view.getInt32(this._offset) * Math.pow(2, 32);
-              lo = this._view.getUint32(this._offset + 4);
-              this._offset += 8;
-              return new Date(hi + lo);
-            }
-            return [type, this._bin(8)];
-          case 216:
-            type = this._view.getInt8(this._offset);
-            this._offset += 1;
-            return [type, this._bin(16)];
-          // str
-          case 217:
-            length = this._view.getUint8(this._offset);
-            this._offset += 1;
-            return this._str(length);
-          case 218:
-            length = this._view.getUint16(this._offset);
-            this._offset += 2;
-            return this._str(length);
-          case 219:
-            length = this._view.getUint32(this._offset);
-            this._offset += 4;
-            return this._str(length);
-          // array
-          case 220:
-            length = this._view.getUint16(this._offset);
-            this._offset += 2;
-            return this._array(length);
-          case 221:
-            length = this._view.getUint32(this._offset);
-            this._offset += 4;
-            return this._array(length);
-          // map
-          case 222:
-            length = this._view.getUint16(this._offset);
-            this._offset += 2;
-            return this._map(length);
-          case 223:
-            length = this._view.getUint32(this._offset);
-            this._offset += 4;
-            return this._map(length);
-        }
-        throw new Error("Could not parse");
-      };
-      function decode5(buffer2) {
-        var decoder = new Decoder2(buffer2);
-        var value2 = decoder._parse();
-        if (decoder._offset !== buffer2.byteLength) {
-          throw new Error(buffer2.byteLength - decoder._offset + " trailing bytes");
-        }
-        return value2;
-      }
-      module.exports = decode5;
-    }
-  });
-
-  // node_modules/socket.io-msgpack-parser/node_modules/notepack.io/lib/index.js
-  var require_lib2 = __commonJS({
-    "node_modules/socket.io-msgpack-parser/node_modules/notepack.io/lib/index.js"(exports) {
-      exports.encode = require_encode2();
-      exports.decode = require_decode2();
-    }
-  });
-
-  // node_modules/component-emitter/index.js
-  var require_component_emitter = __commonJS({
-    "node_modules/component-emitter/index.js"(exports, module) {
-      if (typeof module !== "undefined") {
-        module.exports = Emitter2;
-      }
-      function Emitter2(obj) {
-        if (obj) return mixin2(obj);
-      }
-      function mixin2(obj) {
-        for (var key in Emitter2.prototype) {
-          obj[key] = Emitter2.prototype[key];
-        }
-        return obj;
-      }
-      Emitter2.prototype.on = Emitter2.prototype.addEventListener = function(event, fn) {
-        this._callbacks = this._callbacks || {};
-        (this._callbacks["$" + event] = this._callbacks["$" + event] || []).push(fn);
-        return this;
-      };
-      Emitter2.prototype.once = function(event, fn) {
-        function on2() {
-          this.off(event, on2);
-          fn.apply(this, arguments);
-        }
-        on2.fn = fn;
-        this.on(event, on2);
-        return this;
-      };
-      Emitter2.prototype.off = Emitter2.prototype.removeListener = Emitter2.prototype.removeAllListeners = Emitter2.prototype.removeEventListener = function(event, fn) {
-        this._callbacks = this._callbacks || {};
-        if (0 == arguments.length) {
-          this._callbacks = {};
+        function on2(type, func) {
+          getListeners(this, type).push(func);
           return this;
         }
-        var callbacks = this._callbacks["$" + event];
-        if (!callbacks) return this;
-        if (1 == arguments.length) {
-          delete this._callbacks["$" + event];
-          return this;
-        }
-        var cb;
-        for (var i = 0; i < callbacks.length; i++) {
-          cb = callbacks[i];
-          if (cb === fn || cb.fn === fn) {
-            callbacks.splice(i, 1);
-            break;
+        function once(type, func) {
+          var that = this;
+          wrap.originalListener = func;
+          getListeners(that, type).push(wrap);
+          return that;
+          function wrap() {
+            off.call(that, type, wrap);
+            func.apply(this, arguments);
           }
         }
-        if (callbacks.length === 0) {
-          delete this._callbacks["$" + event];
-        }
-        return this;
-      };
-      Emitter2.prototype.emit = function(event) {
-        this._callbacks = this._callbacks || {};
-        var args = new Array(arguments.length - 1), callbacks = this._callbacks["$" + event];
-        for (var i = 1; i < arguments.length; i++) {
-          args[i - 1] = arguments[i];
-        }
-        if (callbacks) {
-          callbacks = callbacks.slice(0);
-          for (var i = 0, len = callbacks.length; i < len; ++i) {
-            callbacks[i].apply(this, args);
+        function off(type, func) {
+          var that = this;
+          var listners;
+          if (!arguments.length) {
+            delete that[LISTENERS];
+          } else if (!func) {
+            listners = that[LISTENERS];
+            if (listners) {
+              delete listners[type];
+              if (!Object.keys(listners).length) return off.call(that);
+            }
+          } else {
+            listners = getListeners(that, type, true);
+            if (listners) {
+              listners = listners.filter(ne);
+              if (!listners.length) return off.call(that, type);
+              that[LISTENERS][type] = listners;
+            }
+          }
+          return that;
+          function ne(test) {
+            return test !== func && test.originalListener !== func;
           }
         }
-        return this;
-      };
-      Emitter2.prototype.listeners = function(event) {
-        this._callbacks = this._callbacks || {};
-        return this._callbacks["$" + event] || [];
-      };
-      Emitter2.prototype.hasListeners = function(event) {
-        return !!this.listeners(event).length;
-      };
+        function emit(type, value2) {
+          var that = this;
+          var listeners = getListeners(that, type, true);
+          if (!listeners) return false;
+          var arglen = arguments.length;
+          if (arglen === 1) {
+            listeners.forEach(zeroarg);
+          } else if (arglen === 2) {
+            listeners.forEach(onearg);
+          } else {
+            var args = Array.prototype.slice.call(arguments, 1);
+            listeners.forEach(moreargs);
+          }
+          return !!listeners.length;
+          function zeroarg(func) {
+            func.call(that);
+          }
+          function onearg(func) {
+            func.call(that, value2);
+          }
+          function moreargs(func) {
+            func.apply(that, args);
+          }
+        }
+        function getListeners(that, type, readonly) {
+          if (readonly && !that[LISTENERS]) return;
+          var listeners = that[LISTENERS] || (that[LISTENERS] = {});
+          return listeners[type] || (listeners[type] = []);
+        }
+      })(EventLite);
     }
   });
 
-  // node_modules/socket.io-msgpack-parser/index.js
-  var require_socket = __commonJS({
-    "node_modules/socket.io-msgpack-parser/index.js"(exports) {
-      var msgpack3 = require_lib2();
-      var Emitter2 = require_component_emitter();
-      exports.protocol = 5;
-      var PacketType2 = exports.PacketType = {
-        CONNECT: 0,
-        DISCONNECT: 1,
-        EVENT: 2,
-        ACK: 3,
-        CONNECT_ERROR: 4
-      };
-      var isInteger = Number.isInteger || function(value2) {
-        return typeof value2 === "number" && isFinite(value2) && Math.floor(value2) === value2;
-      };
-      var isString = function(value2) {
-        return typeof value2 === "string";
-      };
-      var isObject2 = function(value2) {
-        return Object.prototype.toString.call(value2) === "[object Object]";
-      };
-      function Encoder2() {
-      }
-      Encoder2.prototype.encode = function(packet) {
-        return [msgpack3.encode(packet)];
-      };
-      function Decoder2() {
-      }
-      Emitter2(Decoder2.prototype);
-      Decoder2.prototype.add = function(obj) {
-        var decoded = msgpack3.decode(obj);
-        this.checkPacket(decoded);
-        this.emit("decoded", decoded);
-      };
-      function isDataValid(decoded) {
-        switch (decoded.type) {
-          case PacketType2.CONNECT:
-            return decoded.data === void 0 || isObject2(decoded.data);
-          case PacketType2.DISCONNECT:
-            return decoded.data === void 0;
-          case PacketType2.CONNECT_ERROR:
-            return isString(decoded.data) || isObject2(decoded.data);
-          default:
-            return Array.isArray(decoded.data);
-        }
-      }
-      Decoder2.prototype.checkPacket = function(decoded) {
-        var isTypeValid = isInteger(decoded.type) && decoded.type >= PacketType2.CONNECT && decoded.type <= PacketType2.CONNECT_ERROR;
-        if (!isTypeValid) {
-          throw new Error("invalid packet type");
-        }
-        if (!isString(decoded.nsp)) {
-          throw new Error("invalid namespace");
-        }
-        if (!isDataValid(decoded)) {
-          throw new Error("invalid payload");
-        }
-        var isAckValid = decoded.id === void 0 || isInteger(decoded.id);
-        if (!isAckValid) {
-          throw new Error("invalid packet id");
-        }
-      };
-      Decoder2.prototype.destroy = function() {
-      };
+  // node_modules/msgpack-lite/lib/encoder.js
+  var require_encoder = __commonJS({
+    "node_modules/msgpack-lite/lib/encoder.js"(exports) {
       exports.Encoder = Encoder2;
+      var EventLite = require_event_lite();
+      var EncodeBuffer = require_encode_buffer().EncodeBuffer;
+      function Encoder2(options) {
+        if (!(this instanceof Encoder2)) return new Encoder2(options);
+        EncodeBuffer.call(this, options);
+      }
+      Encoder2.prototype = new EncodeBuffer();
+      EventLite.mixin(Encoder2.prototype);
+      Encoder2.prototype.encode = function(chunk) {
+        this.write(chunk);
+        this.emit("data", this.read());
+      };
+      Encoder2.prototype.end = function(chunk) {
+        if (arguments.length) this.encode(chunk);
+        this.flush();
+        this.emit("end");
+      };
+    }
+  });
+
+  // node_modules/msgpack-lite/lib/decoder.js
+  var require_decoder = __commonJS({
+    "node_modules/msgpack-lite/lib/decoder.js"(exports) {
       exports.Decoder = Decoder2;
+      var EventLite = require_event_lite();
+      var DecodeBuffer = require_decode_buffer().DecodeBuffer;
+      function Decoder2(options) {
+        if (!(this instanceof Decoder2)) return new Decoder2(options);
+        DecodeBuffer.call(this, options);
+      }
+      Decoder2.prototype = new DecodeBuffer();
+      EventLite.mixin(Decoder2.prototype);
+      Decoder2.prototype.decode = function(chunk) {
+        if (arguments.length) this.write(chunk);
+        this.flush();
+      };
+      Decoder2.prototype.push = function(chunk) {
+        this.emit("data", chunk);
+      };
+      Decoder2.prototype.end = function(chunk) {
+        this.decode(chunk);
+        this.emit("end");
+      };
+    }
+  });
+
+  // node_modules/msgpack-lite/lib/ext.js
+  var require_ext = __commonJS({
+    "node_modules/msgpack-lite/lib/ext.js"(exports) {
+      require_read_core();
+      require_write_core();
+      exports.createCodec = require_codec_base().createCodec;
+    }
+  });
+
+  // node_modules/msgpack-lite/lib/codec.js
+  var require_codec = __commonJS({
+    "node_modules/msgpack-lite/lib/codec.js"(exports) {
+      require_read_core();
+      require_write_core();
+      exports.codec = {
+        preset: require_codec_base().preset
+      };
+    }
+  });
+
+  // node_modules/msgpack-lite/lib/browser.js
+  var require_browser2 = __commonJS({
+    "node_modules/msgpack-lite/lib/browser.js"(exports) {
+      exports.encode = require_encode().encode;
+      exports.decode = require_decode().decode;
+      exports.Encoder = require_encoder().Encoder;
+      exports.Decoder = require_decoder().Decoder;
+      exports.createCodec = require_ext().createCodec;
+      exports.codec = require_codec().codec;
     }
   });
 
@@ -9162,14 +9869,11 @@
   var NKeyPrivateSchema = isOfType(NKeyPrivate);
 
   // build/src/helpers/msgpack.js
-  var msgpack = __toESM(require_lib(), 1);
+  var msgpack = __toESM(require_browser2(), 1);
   var encode2 = (data) => {
-    return new Uint8Array(msgpack.encode(data));
+    return msgpack.encode(data);
   };
   var decode2 = (buffer2) => {
-    if (typeof global !== "undefined") {
-      buffer2 = Buffer.from(buffer2);
-    }
     return msgpack.decode(buffer2);
   };
 
@@ -9296,7 +10000,8 @@
       this._uuidBuffer = new Uint8Array(38);
       this._uuidBuffer.set(this.ed25519pub, 0);
       this._uuidBuffer.set(numberToBytesBE(this.timestamp, 6), 32);
-      this.uuid = bytesToHex(this._uuidBuffer);
+      const base36UUIDBufferSize = Math.ceil(this._uuidBuffer.length * Math.log(256) / Math.log(36));
+      this.uuid = BASE36.encodeBytes(this._uuidBuffer, base36UUIDBufferSize).toLowerCase();
       if (this._nkey instanceof NKeyPrivate) {
         ProofRequestLookup.getInstance().register(this);
       }
@@ -10145,6 +10850,9 @@
       return encryptedBufferWithPublicKeys;
     }
     static fromEncryptedBuffer(buffer2) {
+      if (buffer2 instanceof ArrayBuffer) {
+        buffer2 = new Uint8Array(buffer2);
+      }
       const responseEd25519pub = isUint8ArrayOfLength32.parse(buffer2.subarray(0, 32));
       const requestNKeyPublic = new NKeyPublic(buffer2.subarray(32, 64));
       const requestNKeyPrivate = NKeyPrivateLookup.getInstance().lookup(requestNKeyPublic.uuid);
@@ -13527,10 +14235,6 @@
     connect: lookup2
   });
 
-  // build/src/SocketIOConnection/index.js
-  var msgpack2 = __toESM(require_lib(), 1);
-  var import_socket8 = __toESM(require_socket(), 1);
-
   // build/src/SocketIOConnection/constants.js
   var socketIOClientOptions = {
     reconnection: true,
@@ -13607,9 +14311,11 @@
         const publicKey = this.proofRequest.ed25519pub;
         const [clientOrigin, clientName] = _SocketIOConnection.getTitle(this.pageTitle);
         const payload = { timestamp, serverName: this.proofRequest.uuid, clientName, clientOrigin };
-        const payloadBufffer = new Uint8Array(msgpack2.encode(payload));
+        const payloadBufffer = new Uint8Array(encode2(payload));
         const signature = new Uint8Array(this.nKeyPrivate.sign(payloadBufffer));
-        return ["SDK", publicKey, payloadBufffer, signature];
+        const tokenBuffer = encode2([publicKey, payloadBufffer, signature]);
+        const token = bytesToHex(tokenBuffer);
+        return `SDK ${token}`;
       };
       this.proofRequest = proofRequest2;
       this.pageTitle = `${pageTitle || ""}`;
@@ -13624,7 +14330,7 @@
         ...socketIOClientOptions,
         transports: ["websocket"],
         withCredentials: true,
-        parser: import_socket8.default,
+        // parser: customSocketIOParser,
         auth: (cb) => cb({
           token: this.authSelf()
         })
@@ -13688,7 +14394,7 @@
     document.querySelector("#qrRegion").innerHTML = svg;
     console.log("QR code generated.");
   });
-  var connection = new SocketIOConnection(proofRequest, "qrWithConnect");
+  var connection = new SocketIOConnection(proofRequest, "browserQRDummy");
   console.log("Waiting for proof response from socket.io connection...");
   ProofResponseLookup.getInstance().waitFor(proofRequest.uuid).then(
     (proofResponse) => {
@@ -13755,6 +14461,33 @@
   });
 })();
 /*! Bundled license information:
+
+ieee754/index.js:
+  (*! ieee754. BSD-3-Clause License. Feross Aboukhadijeh <https://feross.org/opensource> *)
+
+event-lite/event-lite.js:
+  (**
+   * event-lite.js - Light-weight EventEmitter (less than 1KB when gzipped)
+   *
+   * @copyright Yusuke Kawasaki
+   * @license MIT
+   * @constructor
+   * @see https://github.com/kawanet/event-lite
+   * @see http://kawanet.github.io/event-lite/EventLite.html
+   * @example
+   * var EventLite = require("event-lite");
+   *
+   * function MyClass() {...}             // your class
+   *
+   * EventLite.mixin(MyClass.prototype);  // import event methods
+   *
+   * var obj = new MyClass();
+   * obj.on("foo", function() {...});     // add event listener
+   * obj.once("bar", function() {...});   // add one-time event listener
+   * obj.emit("foo");                     // dispatch event
+   * obj.emit("bar");                     // dispatch another event
+   * obj.off("foo");                      // remove event listener
+   *)
 
 @noble/curves/esm/abstract/utils.js:
   (*! noble-curves - MIT License (c) 2022 Paul Miller (paulmillr.com) *)

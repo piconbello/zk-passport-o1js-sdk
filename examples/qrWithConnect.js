@@ -11,7 +11,7 @@ const proofRequest = new ProofRequest({ query });
 console.log('Created request:', JSON.stringify(proofRequest), '\n');
 
 const proofRequestQR = await proofRequest.createQRCode('text');
-console.log('Proof request QR:\n\n', proofRequestQR);
+console.log('Proof request QR:\n\n'+proofRequestQR);
 
 const connection = new SocketIOConnection(proofRequest, 'qrWithConnect');
 console.log('Waiting for proof response from socket.io connection...');

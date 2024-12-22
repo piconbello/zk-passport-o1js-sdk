@@ -21,7 +21,7 @@ proofRequest.createQRCode('svg').then(svg => {
   console.log('QR code generated.');
 });
 
-const connection = new SocketIOConnection(proofRequest, 'qrWithConnect');
+const connection = new SocketIOConnection(proofRequest, 'browserQRDummy');
 console.log('Waiting for proof response from socket.io connection...');
 
 ProofResponseLookup.getInstance().waitFor(proofRequest.uuid).then(

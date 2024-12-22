@@ -1,11 +1,11 @@
 import { bytesToHex } from '@noble/curves/abstract/utils';
 import { io, Socket } from "socket.io-client";
-import * as msgpack from 'notepack.io';
-import customSocketIOParser from 'socket.io-msgpack-parser';
+// import customSocketIOParser from 'socket.io-msgpack-parser';
 
 import { ProofRequest } from '../ProofRequest/index.js';
 import { ProofResponse, ProofResponseLookup } from '../ProofResponse/index.js';
 import { NKeyPrivate, NKeyPrivateLookup } from '../NKey/index.js';
+import * as msgpack from '../helpers/msgpack.js';
 
 import { socketIOClientOptions, DEFAULT_PORT, PORT_RANGE } from "./constants.js";
 
@@ -37,7 +37,7 @@ export class SocketIOConnection {
       ...socketIOClientOptions,
       transports: ['websocket'],
       withCredentials: true,
-      parser: customSocketIOParser,
+      // parser: customSocketIOParser,
       auth: (cb: any) => cb({
         token: this.authSelf()
       })
@@ -149,10 +149,10 @@ export class SocketIOConnection {
     const payloadBufffer = new Uint8Array(msgpack.encode(payload));
     const signature = new Uint8Array(this.nKeyPrivate.sign(payloadBufffer));
 
-    // const tokenBuffer = msgpack.encode([publicKey, payloadBufffer, signature]);
-    // const token = bytesToHex(tokenBuffer);
+    const tokenBuffer = msgpack.encode([publicKey, payloadBufffer, signature]);
+    const token = bytesToHex(tokenBuffer);
 
-    // return `SDK ${token}`;
-    return ['SDK', publicKey, payloadBufffer, signature];
+    return `SDK ${token}`;
+    // return ['SDK', publicKey, payloadBufffer, signature];
   }
 }
