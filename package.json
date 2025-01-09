@@ -2,14 +2,31 @@
   "name": "zk-passport-o1js-sdk",
   "version": "0.2.0",
   "description": "",
-  "author": "",
   "license": "Apache-2.0",
   "keywords": [
+    "zk-passport",
+    "zk-passport-o1js",
+    "o1js",
     "mina-zkapp",
     "mina-zk-app",
     "mina-dapp",
     "zkapp"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/piconbello/zk-passport-o1js-sdk.git"
+  },
+  "author": "Piconbello (https://github.com/piconbello)",
+  "contributors": [
+    "Halit Özsoy <halitozsoy1584@gmail.com> (https://github.com/corupta)"
+  ],
+  "bugs": {
+    "url": "https://github.com/piconbello/zk-passport-o1js-sdk/issues"
+  },
+  "homepage": "https://github.com/piconbello/zk-passport-o1js-sdk#readme",
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
+  },
   "type": "module",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
