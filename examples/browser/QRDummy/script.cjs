@@ -11440,8 +11440,8 @@
      */
     pause(onPause) {
     }
-    createUri(schema, query2 = {}) {
-      return schema + "://" + this._hostname() + this._port() + this.opts.path + this._query(query2);
+    createUri(schema, query = {}) {
+      return schema + "://" + this._hostname() + this._port() + this.opts.path + this._query(query);
     }
     _hostname() {
       const hostname = this.opts.hostname;
@@ -11454,8 +11454,8 @@
         return "";
       }
     }
-    _query(query2) {
-      const encodedQuery = encode3(query2);
+    _query(query) {
+      const encodedQuery = encode3(query);
       return encodedQuery.length ? "?" + encodedQuery : "";
     }
   };
@@ -11581,14 +11581,14 @@
      */
     uri() {
       const schema = this.opts.secure ? "https" : "http";
-      const query2 = this.query || {};
+      const query = this.query || {};
       if (false !== this.opts.timestampRequests) {
-        query2[this.opts.timestampParam] = randomString();
+        query[this.opts.timestampParam] = randomString();
       }
-      if (!this.supportsBinary && !query2.sid) {
-        query2.b64 = 1;
+      if (!this.supportsBinary && !query.sid) {
+        query.b64 = 1;
       }
-      return this.createUri(schema, query2);
+      return this.createUri(schema, query);
     }
   };
 
@@ -11915,14 +11915,14 @@
      */
     uri() {
       const schema = this.opts.secure ? "wss" : "ws";
-      const query2 = this.query || {};
+      const query = this.query || {};
       if (this.opts.timestampRequests) {
-        query2[this.opts.timestampParam] = randomString();
+        query[this.opts.timestampParam] = randomString();
       }
       if (!this.supportsBinary) {
-        query2.b64 = 1;
+        query.b64 = 1;
       }
-      return this.createUri(schema, query2);
+      return this.createUri(schema, query);
     }
   };
   var WebSocketCtor = globalThisShim.WebSocket || globalThisShim.MozWebSocket;
@@ -12055,9 +12055,9 @@
     }
     return names;
   }
-  function queryKey(uri, query2) {
+  function queryKey(uri, query) {
     const data = {};
-    query2.replace(/(?:^|&)([^&=]*)=?([^&]*)/g, function($0, $1, $2) {
+    query.replace(/(?:^|&)([^&=]*)=?([^&]*)/g, function($0, $1, $2) {
       if ($1) {
         data[$1] = $2;
       }
@@ -12168,13 +12168,13 @@
      * @private
      */
     createTransport(name) {
-      const query2 = Object.assign({}, this.opts.query);
-      query2.EIO = protocol;
-      query2.transport = name;
+      const query = Object.assign({}, this.opts.query);
+      query.EIO = protocol;
+      query.transport = name;
       if (this.id)
-        query2.sid = this.id;
+        query.sid = this.id;
       const opts = Object.assign({}, this.opts, {
-        query: query2,
+        query,
         socket: this,
         hostname: this.hostname,
         secure: this.secure,
@@ -14378,24 +14378,39 @@
   }).required();
 
   // examples/browser/QRDummy/script.mjs
-  var query = new ProofRequestQuery({
-    type: "dummy",
-    dummy: Math.floor(Math.random() * 1e7).toString(16)
+  var proofRequest;
+  document.querySelector("#dummyInput").value = Math.floor(Math.random() * 1e7).toString(16);
+  function proofRequestFormSubmit() {
+    const mobileAppProtocol = document.querySelector("#mobileAppProtocol").value;
+    const query = new ProofRequestQuery({
+      type: "dummy",
+      dummy: document.querySelector("#dummyInput").value
+    });
+    proofRequest = new ProofRequest({ query });
+    document.querySelector("#proofRequest > pre").innerText = JSON.stringify(
+      proofRequest,
+      null,
+      2
+    );
+    proofRequest.createQRCode("svg", mobileAppProtocol).then((svg) => {
+      document.querySelector("#qrRegion").innerHTML = svg;
+    });
+    document.querySelector("#proofResponse").innerHTML = `<pre>Waiting for proof response...</pre>`;
+    const connection = new SocketIOConnection(proofRequest, "browserQRDummy");
+    console.log("Waiting for proof response from socket.io connection...");
+  }
+  document.querySelector("#proofRequestForm").addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    ev.stopPropagation();
+    proofRequestFormSubmit();
   });
-  console.log("Created query:", JSON.stringify(query), "\n");
-  var proofRequest = new ProofRequest({ query });
-  console.log("Created request:", JSON.stringify(proofRequest), "\n");
-  document.querySelector("#proofRequest > pre").innerText = JSON.stringify(
-    proofRequest,
-    null,
-    2
-  );
-  proofRequest.createQRCode("svg").then((svg) => {
-    document.querySelector("#qrRegion").innerHTML = svg;
-    console.log("QR code generated.");
+  proofRequestFormSubmit();
+  document.querySelector("#mobileAppProtocol").addEventListener("change", (ev) => {
+    const nextMobileAppProtocol = ev.target.value;
+    proofRequest.createQRCode("svg", nextMobileAppProtocol).then((svg) => {
+      document.querySelector("#qrRegion").innerHTML = svg;
+    });
   });
-  var connection = new SocketIOConnection(proofRequest, "browserQRDummy");
-  console.log("Waiting for proof response from socket.io connection...");
   ProofResponseLookup.getInstance().waitFor(proofRequest.uuid).then(
     (proofResponse) => {
       console.log("Proof response:", JSON.stringify(proofResponse), "\n");

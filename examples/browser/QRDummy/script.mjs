@@ -3,26 +3,45 @@
 
 import { ProofRequestQuery, ProofRequest, ProofResponse, ProofResponseData, SocketIOConnection, ProofResponseLookup } from '../../../build/src/index.js';
 
-const query = new ProofRequestQuery({
-  type: 'dummy',
-  dummy: Math.floor(Math.random() * 10000000).toString(16)
+let proofRequest;
+document.querySelector('#dummyInput').value = Math.floor(Math.random() * 10000000).toString(16);
+function proofRequestFormSubmit() {
+  const mobileAppProtocol = document.querySelector('#mobileAppProtocol').value;
+
+  const query = new ProofRequestQuery({
+    type: 'dummy',
+    dummy: document.querySelector('#dummyInput').value
+  });
+
+  proofRequest = new ProofRequest({ query });
+  document.querySelector('#proofRequest > pre').innerText = JSON.stringify(
+    proofRequest, null, 2
+  );
+
+  proofRequest.createQRCode('svg', mobileAppProtocol).then(svg => {
+    document.querySelector('#qrRegion').innerHTML = svg;
+  });
+
+  document.querySelector('#proofResponse').innerHTML = `<pre>Waiting for proof response...</pre>`;
+
+  const connection = new SocketIOConnection(proofRequest, 'browserQRDummy');
+  console.log('Waiting for proof response from socket.io connection...');
+}
+document.querySelector('#proofRequestForm').addEventListener('submit', (ev) => {
+  ev.preventDefault();
+  ev.stopPropagation();
+
+  proofRequestFormSubmit();
+});
+proofRequestFormSubmit();
+
+document.querySelector('#mobileAppProtocol').addEventListener('change', (ev) => {
+  const nextMobileAppProtocol = ev.target.value;
+  proofRequest.createQRCode('svg', nextMobileAppProtocol).then(svg => {
+    document.querySelector('#qrRegion').innerHTML = svg;
+  });
 });
 
-console.log('Created query:', JSON.stringify(query), '\n');
-
-const proofRequest = new ProofRequest({ query });
-console.log('Created request:', JSON.stringify(proofRequest), '\n');
-document.querySelector('#proofRequest > pre').innerText = JSON.stringify(
-  proofRequest, null, 2
-);
-
-proofRequest.createQRCode('svg').then(svg => {
-  document.querySelector('#qrRegion').innerHTML = svg;
-  console.log('QR code generated.');
-});
-
-const connection = new SocketIOConnection(proofRequest, 'browserQRDummy');
-console.log('Waiting for proof response from socket.io connection...');
 
 ProofResponseLookup.getInstance().waitFor(proofRequest.uuid).then(
   (proofResponse) => {

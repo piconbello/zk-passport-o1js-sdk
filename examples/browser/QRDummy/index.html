@@ -12,14 +12,35 @@
   </head>
   <body>
     <h1>Browser QR Dummy</h1>
+    <div>
+      <form id="proofRequestForm">
+        <div>
+          <label for="dummyInput">
+            Dummy Value:
+          </label>
+          <input type="text" id="dummyInput" />
+        </div>
+        <input type="submit" value="Create Proof Request">
+      </form>
+    </div>
     <div id="proofRequest">
       <pre></pre>
     </div>
+    <div>
+      <label for="mobileAppProtocol">
+        Mobile App Protocol:
+      </label>
+      <select id="mobileAppProtocol">
+        <option value="zk-passport-o1js" selected>zk-passport-o1js:// (Production)</option>
+        <option value="exp+zk-passport-o1js" selected>exp+zk-passport-o1js:// (Expo Development Build)</option>
+      </select>
+    </div>
+    <br />
     <div id="qrRegion" style="max-width: 300px;">
       Initializing ...
     </div>
     <div id="proofResponse">
-      <pre>Waiting for response.</pre>
+      <pre>No proof request yet.</pre>
     </div>
     <input type="file" id="proofResponseFile">
     <br />
